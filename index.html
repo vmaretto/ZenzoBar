@@ -386,18 +386,20 @@
             }
             
             render() {
-                const app = document.getElementById('app');
-                
-                if (this.state.currentView === 'tables') {
-                    app.innerHTML = this.renderTableView();
-                } else if (this.state.currentView === 'menu') {
-                    app.innerHTML = this.renderMenuView();
-                } else if (this.state.currentView === 'kitchen') {
-                    app.innerHTML = this.renderKitchenView();
-                }
-                
-                this.attachEventListeners();
-            }
+    const app = document.getElementById('app');
+    
+    if (this.state.currentView === 'tables') {
+        app.innerHTML = this.renderTableView();
+    } else if (this.state.currentView === 'menu') {
+        app.innerHTML = this.renderMenuView();
+    } else if (this.state.currentView === 'kitchen') {
+        app.innerHTML = this.renderKitchenView();
+    } else if (this.state.currentView === 'history') {
+        app.innerHTML = this.renderHistoryView();
+    }
+    
+    this.attachEventListeners();
+}
             
             renderTableView() {
                 return `
