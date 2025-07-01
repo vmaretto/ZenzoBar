@@ -464,15 +464,6 @@
                 alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
             }
             
-            resetTables() {
-                this.setState({ 
-                    customTables: [], 
-                    editingTable: null, 
-                    showSettings: false 
-                });
-                firebaseService.update('tables', []);
-            }
-            
             render() {
                 const app = document.getElementById('app');
                 
@@ -482,8 +473,6 @@
                     app.innerHTML = this.renderMenuView();
                 } else if (this.state.currentView === 'kitchen') {
                     app.innerHTML = this.renderKitchenView();
-                } else if (this.state.currentView === 'history') {
-                    app.innerHTML = this.renderHistoryView();
                 }
                 
                 this.attachEventListeners();
