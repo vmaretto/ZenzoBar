@@ -1,712 +1,696 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="it">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.5">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenzoBar Orders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase v9 SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+        
+        // 🔥 TUA CONFIGURAZIONE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlYaxfd7JScPfwayxUF6um5fbU2CQ8SWg",
+            authDomain: "zenzobar-edbdc.firebaseapp.com", 
+            projectId: "zenzobar-edbdc",
+            storageBucket: "zenzobar-edbdc.firebasestorage.app",
+            messagingSenderId: "408846717271",
+            appId: "1:408846717271:web:53e2132f8370b9eb325612"
+        };
+
+        // Inizializza Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Rendi Firebase globale per l'app
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseDoc = doc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseOnSnapshot = onSnapshot;
+        
+        console.log('🔥 Firebase inizializzato con successo!');
+        
+        // Notifica che Firebase è pronto
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="it"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;ZenzoBar Orders&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Firebase v9 SDK --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script type="module"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// 🔥 TUA CONFIGURAZIONE FIREBASE</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const firebaseConfig = {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>apiKey: "AIzaSyAlYaxfd7JScPfwayxUF6um5fbU2CQ8SWg",</p>
-<p class="p1"><span class="Apple-converted-space">            </span>authDomain: "zenzobar-edbdc.firebaseapp.com",<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>projectId: "zenzobar-edbdc",</p>
-<p class="p1"><span class="Apple-converted-space">            </span>storageBucket: "zenzobar-edbdc.firebasestorage.app",</p>
-<p class="p1"><span class="Apple-converted-space">            </span>messagingSenderId: "408846717271",</p>
-<p class="p1"><span class="Apple-converted-space">            </span>appId: "1:408846717271:web:53e2132f8370b9eb325612"</p>
-<p class="p1"><span class="Apple-converted-space">        </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Inizializza Firebase</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const app = initializeApp(firebaseConfig);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const db = getFirestore(app);</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Rendi Firebase globale per l'app</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.firebaseApp = app;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.firebaseDb = db;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.firebaseDoc = doc;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.firebaseSetDoc = setDoc;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.firebaseOnSnapshot = onSnapshot;</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>console.log('🔥 Firebase inizializzato con successo!');</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Notifica che Firebase è pronto</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.dispatchEvent(new Event('firebaseReady'));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="app"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="flex items-center justify-center min-h-screen"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="text-center"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;p class="mt-4 text-gray-600"&gt;Caricamento ZenzoBar...&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Firebase Service</p>
-<p class="p1"><span class="Apple-converted-space">        </span>class FirebaseService {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>constructor() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.db = null;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.listeners = [];</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.isInitialized = false;</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>// Attendi che Firebase sia caricato</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (window.firebaseDb) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.initializeFirebase();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>window.addEventListener('firebaseReady', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>this.initializeFirebase();</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>initializeFirebase() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.db = window.firebaseDb;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.isInitialized = true;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>console.log('🔥 FirebaseService pronto!');</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>// Notifica i listeners che Firebase è pronto</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.listeners.forEach(listener =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setupRealListener(listener);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>async setupRealListener(listener) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (!this.isInitialized || !this.db) return;</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const docRef = window.firebaseDoc(this.db, 'zenzobar', listener.path);</p>
-<p class="p2"><span class="Apple-converted-space">                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const unsubscribe = window.firebaseOnSnapshot(docRef, (docSnap) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log(`🔥 Firebase update per ${listener.path}`);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>const data = docSnap.exists() ? docSnap.data().value : this.getDefaultValue(listener.path);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>listener.callback(data);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}, (error) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.error(`❌ Errore listener Firebase per ${listener.path}:`, error);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p2"><span class="Apple-converted-space">                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>listener.unsubscribe = unsubscribe;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} catch (error) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>console.error('Errore setup listener Firebase:', error);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>getDefaultValue(path) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>switch(path) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>case 'activeOrders':</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>case 'orderHistory':</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>case 'tables':</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>return [];</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>case 'orders':</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>return {};</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>default:</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>return {};</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>onSnapshot(path, callback) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const listener = { path, callback };</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.listeners.push(listener);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (this.isInitialized) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setupRealListener(listener);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>// Se Firebase non è ancora pronto, restituisci valori default</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const currentData = this.getDefaultValue(path);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>callback(currentData);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>return () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.listeners = this.listeners.filter(l =&gt; l.callback !== callback);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>if (listener.unsubscribe) {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>listener.unsubscribe();</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>async update(path, newData) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>console.log(`🔄 Aggiornamento: ${path}`, newData);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (this.isInitialized &amp;&amp; this.db) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>const docRef = window.firebaseDoc(this.db, 'zenzobar', path);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>await window.firebaseSetDoc(docRef, { value: newData, timestamp: new Date() });</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log(`🔥 Firebase aggiornato: ${path}`);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>} catch (error) {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.error(`❌ Errore aggiornamento Firebase per ${path}:`, error);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>console.log('Firebase non ancora pronto, aggiornamento in coda...');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>getConnectionState() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return this.isInitialized &amp;&amp; navigator.onLine;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const firebaseService = new FirebaseService();</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// ZenzoBar App</p>
-<p class="p1"><span class="Apple-converted-space">        </span>class ZenzoBarApp {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>constructor() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.state = {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>currentView: 'tables',</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>selectedTable: null,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>orders: {},</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>orderHistory: [],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>activeOrders: [],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>showSettings: false,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>tableCount: 8,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>customTables: [],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>editingTable: null,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>isOnline: true,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>syncStatus: 'Inizializzazione...'</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.init();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>init() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setupFirebaseListeners();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.render();</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>// Connection check</p>
-<p class="p1"><span class="Apple-converted-space">                </span>setInterval(() =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const online = firebaseService.getConnectionState();</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ isOnline: online });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>if (!online) {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>this.setState({ syncStatus: '🔴 Offline' });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}, 5000);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>setupFirebaseListeners() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({ syncStatus: '🔄 Connessione Firebase...' });</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const unsubscribeOrders = firebaseService.onSnapshot('orders', (data) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log('📨 Ricevuti orders:', data);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>this.setState({ orders: data || {}, syncStatus: '🔥 Sincronizzato Firebase' });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const unsubscribeActive = firebaseService.onSnapshot('activeOrders', (data) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log('📨 Ricevuti activeOrders:', data);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>this.setState({ activeOrders: Array.isArray(data) ? data : [] });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const unsubscribeHistory = firebaseService.onSnapshot('orderHistory', (data) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log('📨 Ricevuti orderHistory:', data);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>this.setState({ orderHistory: Array.isArray(data) ? data : [] });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const unsubscribeTables = firebaseService.onSnapshot('tables', (data) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>console.log('📨 Ricevuti tables:', data);</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>if (Array.isArray(data) &amp;&amp; data.length &gt; 0) {</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>this.setState({ customTables: data });</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} catch (error) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>console.error('Errore setup Firebase listeners:', error);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ syncStatus: '❌ Errore connessione' });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>setState(newState) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.state = { ...this.state, ...newState };</p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.render();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>// Menu categories</p>
-<p class="p1"><span class="Apple-converted-space">            </span>get menuCategories() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>"Cocktail Analcolico": [</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 1, name: "Acqua Rinfrescante allo Zenzero", price: 6, ingredients: "Zenzero fresco Limone Miele Acqua fredda", description: "Fresco, dissetante, con le note pungenti dello zenzero." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 2, name: "Zenzapero", price: 6, ingredients: "Bevanda naturale allo zenzero Acqua tonica Zenzero fresco", description: "" },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 3, name: "Hulky", price: 7, ingredients: "Kiwi Succo di mela Tonica Basilico fresco", description: "Verde brillante, carattere fresco. Mix energico e botanico." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 4, name: "Tropicana", price: 7, ingredients: "Succo Ananas Sciroppo di Cocco Succo Arancia", description: "Un sorso d'estate: ananas, cocco, arancia e tonica." }</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>"Bevande": [</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 5, name: "Caffè", price: 1.2, ingredients: "Caffè in grani, acqua", description: "Miscela dal gusto pieno e rotondo." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 6, name: "Cappuccino", price: 1.5, ingredients: "Latte fresco, caffè", description: "Un abbraccio caldo per iniziare la giornata." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 7, name: "Acqua naturale", price: 1, ingredients: "Acqua", description: "Acqua sempre disponibile." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 8, name: "Acqua gassata", price: 1, ingredients: "Acqua", description: "Acqua frizzante sempre disponibile." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 9, name: "Succo artigianale Ananas", price: 5, ingredients: "Ananas", description: "Preparato fresco ogni giorno." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 10, name: "Succo artigianale Mela", price: 5, ingredients: "Mela verde", description: "Solo mele fresche, lavorate da noi con cura." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 11, name: "Kombucha Cedro", price: 4.5, ingredients: "Acqua tè nero Zucchero Coltura di Kombucha", description: "Cedro aspro, aromatico, irresistibile." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 12, name: "Smoothie Fragole", price: 5, ingredients: "Fragole e latte", description: "Cremoso, fresco, genuino." }</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>"Cocktail": [</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 13, name: "CHIOSCO AL MARE", price: 15, ingredients: "Gin dry Vermouth bianco Cetriolo Lime", description: "Il nostro cocktail signature. Botanico e pulito." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 14, name: "Ginger Mule Light", price: 10, ingredients: "Vodka infusa allo zenzero Lime Ginger beer", description: "Classico con spirito Zenzo." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 15, name: "THE SALT", price: 15, ingredients: "Gin Artigianale Lime Sale della Cornovaglia", description: "Creato da Paolo Santoro. Sapido e vibrante." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 16, name: "Ginger Vodka &amp; Tonic", price: 10, ingredients: "Vodka infusa allo zenzero Acqua tonica premium", description: "Essenziale, ma con carattere." }</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>"Panino": [</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 17, name: "Calamarino", price: 6, ingredients: "Calamaro scottato zucchine grigliate menta", description: "Tenero, profumato. Estate pura in un morso." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 18, name: "Salmon Zeta", price: 6, ingredients: "Salmone affumicato avocado cipolla rossa", description: "Nordico, tropicale e Zenzo." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 19, name: "Fresco Zeta", price: 6, ingredients: "Avocado zenzero carote lattughino", description: "Completamente vegetale. Freschezza al 100%." }</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>"Dolce": [</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 20, name: "Torta Zenzo Bar", price: 4, ingredients: "Pan di Spagna speziato crema diplomatica", description: "La torta firma di Zenzo Bar." },</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>{ id: 21, name: "Cheesecake allo zenzero", price: 4, ingredients: "Formaggio spalmabile zenzero fresco", description: "Equilibrio tra cremosità e piccante." }</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>]</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>generateTableLayout(count) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const tables = [];</p>
-<p class="p1"><span class="Apple-converted-space">                </span>for (let i = 0; i &lt; count; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>tables.push({ id: i + 1, number: i + 1, seats: seats });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return tables;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>get tables() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return this.state.customTables.length &gt; 0 ? this.state.customTables : this.generateTableLayout(this.state.tableCount);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>getCurrentOrder() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return this.state.orders[this.state.selectedTable] || [];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>async addToOrder(item) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const currentOrder = this.getCurrentOrder();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const existingItem = currentOrder.find(orderItem =&gt; orderItem.id === item.id);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedTableOrders = {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>...this.state.orders,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>[this.state.selectedTable]: existingItem</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>? currentOrder.map(orderItem =&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>orderItem.id === item.id</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>? { ...orderItem, quantity: orderItem.quantity + 1 }</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>: orderItem</p>
-<p class="p1"><span class="Apple-converted-space">                          </span>)</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>: [...currentOrder, { ...item, quantity: 1 }]</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({ orders: updatedTableOrders });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>await firebaseService.update('orders', updatedTableOrders);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>async removeFromOrder(itemId) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const currentOrder = this.getCurrentOrder();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedOrder = currentOrder.map(item =&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>item.id === itemId</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>? { ...item, quantity: Math.max(0, item.quantity - 1) }</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>: item</p>
-<p class="p1"><span class="Apple-converted-space">                </span>).filter(item =&gt; item.quantity &gt; 0);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedTableOrders = {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>...this.state.orders,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>[this.state.selectedTable]: updatedOrder</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({ orders: updatedTableOrders });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>await firebaseService.update('orders', updatedTableOrders);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>calculateTotal() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return this.getCurrentOrder().reduce((total, item) =&gt; total + (item.price * item.quantity), 0);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>async printOrder() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const currentOrder = this.getCurrentOrder();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (currentOrder.length === 0) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>alert('Nessun articolo nell\'ordine!');</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({ syncStatus: '🔄 Invio in cucina...' });</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const newOrder = {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>id: Date.now(),</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>tableNumber: this.state.selectedTable,</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>items: [...currentOrder],</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>total: this.calculateTotal(),</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>timestamp: new Date(),</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>state: 'sent',</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>isModified: false,</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>version: 1</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>};</p>
-<p class="p2"><span class="Apple-converted-space">                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const updatedActiveOrders = [...this.state.activeOrders, newOrder];</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ activeOrders: updatedActiveOrders });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>await firebaseService.update('activeOrders', updatedActiveOrders);</p>
-<p class="p2"><span class="Apple-converted-space">                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const clearedOrders = { ...this.state.orders };</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>delete clearedOrders[this.state.selectedTable];</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ orders: clearedOrders });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>await firebaseService.update('orders', clearedOrders);</p>
-<p class="p2"><span class="Apple-converted-space">                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>alert('✅ ORDINE INVIATO IN CUCINA!');</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ currentView: 'tables' });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} catch (error) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ syncStatus: '❌ Errore invio' });</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>alert('❌ Errore durante l\'invio in cucina. Riprova.');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>closeOrderFromKitchen(orderId) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const orderToClose = this.state.activeOrders.find(order =&gt; order.id == orderId);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (!orderToClose) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>alert('❌ Ordine non trovato!');</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const closedOrder = {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>...orderToClose,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>state: 'paid',</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>closedAt: new Date(),</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>closedBy: 'kitchen'</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedHistory = [closedOrder, ...this.state.orderHistory];</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedActiveOrders = this.state.activeOrders.filter(order =&gt; order.id != orderId);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                    </span>orderHistory: updatedHistory,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>activeOrders: updatedActiveOrders</p>
-<p class="p1"><span class="Apple-converted-space">                </span>});</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>firebaseService.update('orderHistory', updatedHistory);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>firebaseService.update('activeOrders', updatedActiveOrders);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>render() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const app = document.getElementById('app');</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (this.state.currentView === 'tables') {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>app.innerHTML = this.renderTableView();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else if (this.state.currentView === 'menu') {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>app.innerHTML = this.renderMenuView();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else if (this.state.currentView === 'kitchen') {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>app.innerHTML = this.renderKitchenView();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.attachEventListeners();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>renderTableView() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return `</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="p-6"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="flex justify-between items-center mb-6"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;h1 class="text-2xl font-bold text-gray-800"&gt;🔥 Carita Morena X Zenzo Bar&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="text-sm text-gray-600 mt-1"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>${this.state.syncStatus} • Multi-Device Ready</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="flex gap-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>👨‍🍳 Cucina</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>${this.state.activeOrders.length &gt; 0 ?<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>`&lt;span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold"&gt;${this.state.activeOrders.length}&lt;/span&gt;`<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>: ''</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                        </span></p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="flex"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="flex-shrink-0"&gt;🔥&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="ml-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;p class="text-sm"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;strong&gt;Firebase Real-Time attivo!&lt;/strong&gt;&lt;br/&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>Sincronizzazione multi-device funzionante. Apri l'app su smartphone, tablet o altri PC per vedere gli aggiornamenti in tempo reale.</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                        </span></p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="bg-white rounded-lg p-8 shadow-sm border"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;h2 class="text-lg font-semibold mb-6 text-center text-gray-700"&gt;Mappa Tavoli&lt;/h2&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="grid gap-4 justify-center" style="grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>${this.tables.map(table =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>const hasDraftOrder = this.state.orders[table.id]?.length &gt; 0;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>const activeOrder = this.state.activeOrders.find(order =&gt; order.tableNumber === table.id);</p>
-<p class="p2"><span class="Apple-converted-space">                                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>let statusText = 'Libero';</p>
-<p class="p2"><span class="Apple-converted-space">                                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>if (hasDraftOrder) {</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>statusText = 'Bozza';</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>} else if (activeOrder) {</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>statusText = 'In Cucina';</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>}</p>
-<p class="p2"><span class="Apple-converted-space">                                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>return `</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-lg ${bgColor} hover:border-blue-400"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="font-bold text-lg"&gt;${table.number}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="text-xs flex items-center gap-1 opacity-80"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>👥 ${table.seats}</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>${(hasDraftOrder || activeOrder) ? `</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>${hasDraftOrder<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>? this.state.orders[table.id].reduce((sum, item) =&gt; sum + item.quantity, 0)</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>: activeOrder?.items.reduce((sum, item) =&gt; sum + item.quantity, 0) || 0</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>` : ''}</p>
-<p class="p2"><span class="Apple-converted-space">                                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="absolute bottom-1 text-xs font-medium"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>${statusText}</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>}).join('')}</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>renderMenuView() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const table = this.tables.find(t =&gt; t.id === this.state.selectedTable);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const currentOrder = this.getCurrentOrder();</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>return `</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="flex flex-col h-screen bg-gray-50"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="bg-white shadow-sm p-4 flex justify-between items-center"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="flex items-center gap-4"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg"&gt;✕&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;h1 class="text-xl font-bold"&gt;Tavolo ${table?.number}&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                            </span>${currentOrder.length &gt; 0 ? `</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="flex items-center gap-4"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="text-lg font-bold text-green-600"&gt;€${this.calculateTotal().toFixed(2)}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>🖨️ Invia in Cucina</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>` : ''}</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="flex flex-1 overflow-hidden"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="w-1/2 bg-white border-r overflow-y-auto"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>${Object.entries(this.menuCategories).map(([category, items]) =&gt; `</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="p-4 border-b"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;h3 class="font-bold text-lg mb-3 text-gray-800"&gt;${category}&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;div class="grid gap-2"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>${items.map(item =&gt; `</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="flex justify-between items-start p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="flex-1"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>&lt;div class="font-medium"&gt;${item.name}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>&lt;div class="text-green-600 font-bold"&gt;€${item.price.toFixed(2)}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>${item.ingredients ? `&lt;div class="text-xs text-gray-600 mt-1"&gt;${item.ingredients}&lt;/div&gt;` : ''}</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>${item.description ? `&lt;div class="text-xs text-gray-500 mt-1 italic"&gt;${item.description}&lt;/div&gt;` : ''}</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="ml-3 flex-shrink-0"&gt;➕&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>`).join('')}</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>`).join('')}</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="w-1/2 bg-white p-4 overflow-y-auto"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;h3 class="font-bold text-lg mb-4"&gt;Ordine Corrente&lt;/h3&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                                </span></p>
-<p class="p1"><span class="Apple-converted-space">                                </span>${currentOrder.length === 0 ? `</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="text-center text-gray-500 mt-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;div class="text-4xl mb-4"&gt;📋&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;p&gt;Seleziona gli articoli dal menu&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>` : `</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="space-y-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>${currentOrder.map(item =&gt; `</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div class="flex-1"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="font-medium"&gt;${item.name}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="text-sm text-gray-600"&gt;€${item.price.toFixed(2)} cad.&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                                                </span></p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div class="flex items-center gap-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;button onclick="app.removeFromOrder(${item.id})" class="p-1 hover:bg-red-100 rounded text-red-600"&gt;➖&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;span class="font-bold w-8 text-center"&gt;${item.quantity}&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;button onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="p-1 hover:bg-green-100 rounded text-green-600"&gt;➕&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="font-bold text-green-600 w-16 text-right"&gt;€${(item.price * item.quantity).toFixed(2)}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>`).join('')}</p>
-<p class="p2"><span class="Apple-converted-space">                                        </span></p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;div class="border-t pt-3 mt-4"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="flex justify-between items-center text-xl font-bold"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;span&gt;Totale:&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;span class="text-green-600"&gt;€${this.calculateTotal().toFixed(2)}&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>`}</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>renderKitchenView() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return `</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="p-6 bg-gray-900 min-h-screen text-white"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="flex justify-between items-center mb-6"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;h1 class="text-3xl font-bold"&gt;👨‍🍳 Dashboard Cucina&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="text-sm text-gray-300 mt-1"&gt;${this.state.syncStatus} • Real-time sync attivo&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="flex gap-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="bg-red-600 px-4 py-2 rounded-lg"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;span class="font-bold"&gt;Ordini Attivi: ${this.state.activeOrders.length}&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>✕ Torna ai Tavoli</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                        </span></p>
-<p class="p1"><span class="Apple-converted-space">                        </span>${this.state.activeOrders.length === 0 ? `</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="text-center text-gray-400 mt-20"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="text-6xl mb-4"&gt;🍽️&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;p class="text-xl"&gt;Nessun ordine in preparazione&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>&lt;p class="text-gray-500"&gt;Gli ordini appariranno qui quando vengono inviati&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>` : `</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>${this.state.activeOrders.map(order =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>const table = this.tables.find(t =&gt; t.id === order.tableNumber);</p>
-<p class="p2"><span class="Apple-converted-space">                                    </span></p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>return `</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;div class="rounded-lg p-6 border-2 ${order.isModified ? 'bg-yellow-800 border-yellow-400 ring-2 ring-yellow-400' : 'bg-orange-800 border-orange-400'}"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="flex justify-between items-start mb-4"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;h3 class="text-2xl font-bold"&gt;Tavolo ${table?.number}&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;p class="text-sm opacity-75"&gt;${new Date(order.timestamp).toLocaleTimeString('it-IT')}&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>${order.isModified ? `&lt;div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1"&gt;⚠️ ORDINE MODIFICATO v.${order.version}&lt;/div&gt;` : ''}</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;div class="text-right"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="text-2xl font-bold"&gt;€${order.total.toFixed(2)}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="text-sm opacity-75"&gt;${order.items.reduce((sum, item) =&gt; sum + item.quantity, 0)} articoli&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;div class="space-y-2 mb-4"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>${order.items.map(item =&gt; `</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;div class="flex justify-between"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>&lt;span class="font-medium"&gt;${item.quantity}x ${item.name}&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                        </span>&lt;span&gt;€${(item.price * item.quantity).toFixed(2)}&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>`).join('')}</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</p>
-<p class="p2"><span class="Apple-converted-space">                                            </span></p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;button onclick="app.closeOrderFromKitchen(${order.id})" class="w-full bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                                </span>💰 Cliente ha Pagato - Libera Tavolo</p>
-<p class="p1"><span class="Apple-converted-space">                                            </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                                    </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">                                </span>}).join('')}</p>
-<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>`}</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>selectTable(tableId) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const activeOrder = this.state.activeOrders.find(order =&gt; order.tableNumber === tableId);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (activeOrder) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.closeOrderFromWaiter(tableId);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>this.setState({ selectedTable: tableId, currentView: 'menu' });</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>closeOrderFromWaiter(tableNumber) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const orderToClose = this.state.activeOrders.find(order =&gt; order.tableNumber == tableNumber);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (!orderToClose) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>alert('❌ Nessun ordine attivo per questo tavolo!');</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) =&gt; sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (!window.confirm(confirmMsg)) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const closedOrder = {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>...orderToClose,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>state: 'paid',</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>closedAt: new Date(),</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>closedBy: 'waiter'</p>
-<p class="p1"><span class="Apple-converted-space">                </span>};</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedHistory = [closedOrder, ...this.state.orderHistory];</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const updatedActiveOrders = this.state.activeOrders.filter(order =&gt; order.id !== orderToClose.id);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>this.setState({</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>orderHistory: updatedHistory,</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>activeOrders: updatedActiveOrders</p>
-<p class="p1"><span class="Apple-converted-space">                </span>});</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>firebaseService.update('orderHistory', updatedHistory);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>firebaseService.update('activeOrders', updatedActiveOrders);</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>attachEventListeners() {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>// Gli event listeners sono gestiti direttamente nell'HTML tramite onclick</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Inizializza l'app quando Firebase è pronto</p>
-<p class="p1"><span class="Apple-converted-space">        </span>window.addEventListener('firebaseReady', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setTimeout(() =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const app = new ZenzoBarApp();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>window.app = app;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}, 500);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Fallback se Firebase non si carica entro 3 secondi</p>
-<p class="p1"><span class="Apple-converted-space">        </span>setTimeout(() =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!window.app) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const app = new ZenzoBarApp();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>window.app = app;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}, 3000);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+    <div id="app">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Caricamento ZenzoBar...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Firebase Service
+        class FirebaseService {
+            constructor() {
+                this.db = null;
+                this.listeners = [];
+                this.isInitialized = false;
+                
+                // Attendi che Firebase sia caricato
+                if (window.firebaseDb) {
+                    this.initializeFirebase();
+                } else {
+                    window.addEventListener('firebaseReady', () => {
+                        this.initializeFirebase();
+                    });
+                }
+            }
+            
+            initializeFirebase() {
+                this.db = window.firebaseDb;
+                this.isInitialized = true;
+                console.log('🔥 FirebaseService pronto!');
+                
+                // Notifica i listeners che Firebase è pronto
+                this.listeners.forEach(listener => {
+                    this.setupRealListener(listener);
+                });
+            }
+            
+            async setupRealListener(listener) {
+                if (!this.isInitialized || !this.db) return;
+                
+                try {
+                    const docRef = window.firebaseDoc(this.db, 'zenzobar', listener.path);
+                    
+                    const unsubscribe = window.firebaseOnSnapshot(docRef, (docSnap) => {
+                        console.log(`🔥 Firebase update per ${listener.path}`);
+                        const data = docSnap.exists() ? docSnap.data().value : this.getDefaultValue(listener.path);
+                        listener.callback(data);
+                    }, (error) => {
+                        console.error(`❌ Errore listener Firebase per ${listener.path}:`, error);
+                    });
+                    
+                    listener.unsubscribe = unsubscribe;
+                } catch (error) {
+                    console.error('Errore setup listener Firebase:', error);
+                }
+            }
+            
+            getDefaultValue(path) {
+                switch(path) {
+                    case 'activeOrders':
+                    case 'orderHistory':
+                    case 'tables':
+                        return [];
+                    case 'orders':
+                        return {};
+                    default:
+                        return {};
+                }
+            }
+            
+            onSnapshot(path, callback) {
+                const listener = { path, callback };
+                this.listeners.push(listener);
+                
+                if (this.isInitialized) {
+                    this.setupRealListener(listener);
+                } else {
+                    // Se Firebase non è ancora pronto, restituisci valori default
+                    const currentData = this.getDefaultValue(path);
+                    callback(currentData);
+                }
+                
+                return () => {
+                    this.listeners = this.listeners.filter(l => l.callback !== callback);
+                    if (listener.unsubscribe) {
+                        listener.unsubscribe();
+                    }
+                };
+            }
+            
+            async update(path, newData) {
+                console.log(`🔄 Aggiornamento: ${path}`, newData);
+                
+                if (this.isInitialized && this.db) {
+                    try {
+                        const docRef = window.firebaseDoc(this.db, 'zenzobar', path);
+                        await window.firebaseSetDoc(docRef, { value: newData, timestamp: new Date() });
+                        console.log(`🔥 Firebase aggiornato: ${path}`);
+                    } catch (error) {
+                        console.error(`❌ Errore aggiornamento Firebase per ${path}:`, error);
+                    }
+                } else {
+                    console.log('Firebase non ancora pronto, aggiornamento in coda...');
+                }
+            }
+            
+            getConnectionState() {
+                return this.isInitialized && navigator.onLine;
+            }
+        }
+        
+        const firebaseService = new FirebaseService();
+        
+        // ZenzoBar App
+        class ZenzoBarApp {
+            constructor() {
+                this.state = {
+                    currentView: 'tables',
+                    selectedTable: null,
+                    orders: {},
+                    orderHistory: [],
+                    activeOrders: [],
+                    showSettings: false,
+                    tableCount: 8,
+                    customTables: [],
+                    editingTable: null,
+                    isOnline: true,
+                    syncStatus: 'Inizializzazione...'
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupFirebaseListeners();
+                this.render();
+                
+                // Connection check
+                setInterval(() => {
+                    const online = firebaseService.getConnectionState();
+                    this.setState({ isOnline: online });
+                    if (!online) {
+                        this.setState({ syncStatus: '🔴 Offline' });
+                    }
+                }, 5000);
+            }
+            
+            setupFirebaseListeners() {
+                this.setState({ syncStatus: '🔄 Connessione Firebase...' });
+                
+                try {
+                    const unsubscribeOrders = firebaseService.onSnapshot('orders', (data) => {
+                        console.log('📨 Ricevuti orders:', data);
+                        this.setState({ orders: data || {}, syncStatus: '🔥 Sincronizzato Firebase' });
+                    });
+
+                    const unsubscribeActive = firebaseService.onSnapshot('activeOrders', (data) => {
+                        console.log('📨 Ricevuti activeOrders:', data);
+                        this.setState({ activeOrders: Array.isArray(data) ? data : [] });
+                    });
+
+                    const unsubscribeHistory = firebaseService.onSnapshot('orderHistory', (data) => {
+                        console.log('📨 Ricevuti orderHistory:', data);
+                        this.setState({ orderHistory: Array.isArray(data) ? data : [] });
+                    });
+
+                    const unsubscribeTables = firebaseService.onSnapshot('tables', (data) => {
+                        console.log('📨 Ricevuti tables:', data);
+                        if (Array.isArray(data) && data.length > 0) {
+                            this.setState({ customTables: data });
+                        }
+                    });
+                } catch (error) {
+                    console.error('Errore setup Firebase listeners:', error);
+                    this.setState({ syncStatus: '❌ Errore connessione' });
+                }
+            }
+            
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                this.render();
+            }
+            
+            // Menu categories
+            get menuCategories() {
+                return {
+                    "Cocktail Analcolico": [
+                        { id: 1, name: "Acqua Rinfrescante allo Zenzero", price: 6, ingredients: "Zenzero fresco Limone Miele Acqua fredda", description: "Fresco, dissetante, con le note pungenti dello zenzero." },
+                        { id: 2, name: "Zenzapero", price: 6, ingredients: "Bevanda naturale allo zenzero Acqua tonica Zenzero fresco", description: "" },
+                        { id: 3, name: "Hulky", price: 7, ingredients: "Kiwi Succo di mela Tonica Basilico fresco", description: "Verde brillante, carattere fresco. Mix energico e botanico." },
+                        { id: 4, name: "Tropicana", price: 7, ingredients: "Succo Ananas Sciroppo di Cocco Succo Arancia", description: "Un sorso d'estate: ananas, cocco, arancia e tonica." }
+                    ],
+                    "Bevande": [
+                        { id: 5, name: "Caffè", price: 1.2, ingredients: "Caffè in grani, acqua", description: "Miscela dal gusto pieno e rotondo." },
+                        { id: 6, name: "Cappuccino", price: 1.5, ingredients: "Latte fresco, caffè", description: "Un abbraccio caldo per iniziare la giornata." },
+                        { id: 7, name: "Acqua naturale", price: 1, ingredients: "Acqua", description: "Acqua sempre disponibile." },
+                        { id: 8, name: "Acqua gassata", price: 1, ingredients: "Acqua", description: "Acqua frizzante sempre disponibile." },
+                        { id: 9, name: "Succo artigianale Ananas", price: 5, ingredients: "Ananas", description: "Preparato fresco ogni giorno." },
+                        { id: 10, name: "Succo artigianale Mela", price: 5, ingredients: "Mela verde", description: "Solo mele fresche, lavorate da noi con cura." },
+                        { id: 11, name: "Kombucha Cedro", price: 4.5, ingredients: "Acqua tè nero Zucchero Coltura di Kombucha", description: "Cedro aspro, aromatico, irresistibile." },
+                        { id: 12, name: "Smoothie Fragole", price: 5, ingredients: "Fragole e latte", description: "Cremoso, fresco, genuino." }
+                    ],
+                    "Cocktail": [
+                        { id: 13, name: "CHIOSCO AL MARE", price: 15, ingredients: "Gin dry Vermouth bianco Cetriolo Lime", description: "Il nostro cocktail signature. Botanico e pulito." },
+                        { id: 14, name: "Ginger Mule Light", price: 10, ingredients: "Vodka infusa allo zenzero Lime Ginger beer", description: "Classico con spirito Zenzo." },
+                        { id: 15, name: "THE SALT", price: 15, ingredients: "Gin Artigianale Lime Sale della Cornovaglia", description: "Creato da Paolo Santoro. Sapido e vibrante." },
+                        { id: 16, name: "Ginger Vodka & Tonic", price: 10, ingredients: "Vodka infusa allo zenzero Acqua tonica premium", description: "Essenziale, ma con carattere." }
+                    ],
+                    "Panino": [
+                        { id: 17, name: "Calamarino", price: 6, ingredients: "Calamaro scottato zucchine grigliate menta", description: "Tenero, profumato. Estate pura in un morso." },
+                        { id: 18, name: "Salmon Zeta", price: 6, ingredients: "Salmone affumicato avocado cipolla rossa", description: "Nordico, tropicale e Zenzo." },
+                        { id: 19, name: "Fresco Zeta", price: 6, ingredients: "Avocado zenzero carote lattughino", description: "Completamente vegetale. Freschezza al 100%." }
+                    ],
+                    "Dolce": [
+                        { id: 20, name: "Torta Zenzo Bar", price: 4, ingredients: "Pan di Spagna speziato crema diplomatica", description: "La torta firma di Zenzo Bar." },
+                        { id: 21, name: "Cheesecake allo zenzero", price: 4, ingredients: "Formaggio spalmabile zenzero fresco", description: "Equilibrio tra cremosità e piccante." }
+                    ]
+                };
+            }
+            
+            generateTableLayout(count) {
+                const tables = [];
+                for (let i = 0; i < count; i++) {
+                    const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+                    tables.push({ id: i + 1, number: i + 1, seats: seats });
+                }
+                return tables;
+            }
+            
+            get tables() {
+                return this.state.customTables.length > 0 ? this.state.customTables : this.generateTableLayout(this.state.tableCount);
+            }
+            
+            getCurrentOrder() {
+                return this.state.orders[this.state.selectedTable] || [];
+            }
+            
+            async addToOrder(item) {
+                const currentOrder = this.getCurrentOrder();
+                const existingItem = currentOrder.find(orderItem => orderItem.id === item.id);
+                
+                const updatedTableOrders = {
+                    ...this.state.orders,
+                    [this.state.selectedTable]: existingItem
+                        ? currentOrder.map(orderItem =>
+                            orderItem.id === item.id
+                                ? { ...orderItem, quantity: orderItem.quantity + 1 }
+                                : orderItem
+                          )
+                        : [...currentOrder, { ...item, quantity: 1 }]
+                };
+                
+                this.setState({ orders: updatedTableOrders });
+                await firebaseService.update('orders', updatedTableOrders);
+            }
+            
+            async removeFromOrder(itemId) {
+                const currentOrder = this.getCurrentOrder();
+                const updatedOrder = currentOrder.map(item =>
+                    item.id === itemId
+                        ? { ...item, quantity: Math.max(0, item.quantity - 1) }
+                        : item
+                ).filter(item => item.quantity > 0);
+
+                const updatedTableOrders = {
+                    ...this.state.orders,
+                    [this.state.selectedTable]: updatedOrder
+                };
+
+                this.setState({ orders: updatedTableOrders });
+                await firebaseService.update('orders', updatedTableOrders);
+            }
+            
+            calculateTotal() {
+                return this.getCurrentOrder().reduce((total, item) => total + (item.price * item.quantity), 0);
+            }
+            
+            async printOrder() {
+                const currentOrder = this.getCurrentOrder();
+                if (currentOrder.length === 0) {
+                    alert('Nessun articolo nell\'ordine!');
+                    return;
+                }
+
+                this.setState({ syncStatus: '🔄 Invio in cucina...' });
+                
+                try {
+                    const newOrder = {
+                        id: Date.now(),
+                        tableNumber: this.state.selectedTable,
+                        items: [...currentOrder],
+                        total: this.calculateTotal(),
+                        timestamp: new Date(),
+                        state: 'sent',
+                        isModified: false,
+                        version: 1
+                    };
+                    
+                    const updatedActiveOrders = [...this.state.activeOrders, newOrder];
+                    this.setState({ activeOrders: updatedActiveOrders });
+                    await firebaseService.update('activeOrders', updatedActiveOrders);
+                    
+                    const clearedOrders = { ...this.state.orders };
+                    delete clearedOrders[this.state.selectedTable];
+                    this.setState({ orders: clearedOrders });
+                    await firebaseService.update('orders', clearedOrders);
+                    
+                    this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
+                    alert('✅ ORDINE INVIATO IN CUCINA!');
+                    this.setState({ currentView: 'tables' });
+                } catch (error) {
+                    this.setState({ syncStatus: '❌ Errore invio' });
+                    alert('❌ Errore durante l\'invio in cucina. Riprova.');
+                }
+            }
+            
+            closeOrderFromKitchen(orderId) {
+                const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
+                
+                if (!orderToClose) {
+                    alert('❌ Ordine non trovato!');
+                    return;
+                }
+
+                const closedOrder = {
+                    ...orderToClose,
+                    state: 'paid',
+                    closedAt: new Date(),
+                    closedBy: 'kitchen'
+                };
+                
+                const updatedHistory = [closedOrder, ...this.state.orderHistory];
+                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id != orderId);
+                
+                this.setState({ 
+                    orderHistory: updatedHistory,
+                    activeOrders: updatedActiveOrders
+                });
+                
+                firebaseService.update('orderHistory', updatedHistory);
+                firebaseService.update('activeOrders', updatedActiveOrders);
+                
+                alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
+            }
+            
+            render() {
+                const app = document.getElementById('app');
+                
+                if (this.state.currentView === 'tables') {
+                    app.innerHTML = this.renderTableView();
+                } else if (this.state.currentView === 'menu') {
+                    app.innerHTML = this.renderMenuView();
+                } else if (this.state.currentView === 'kitchen') {
+                    app.innerHTML = this.renderKitchenView();
+                }
+                
+                this.attachEventListeners();
+            }
+            
+            renderTableView() {
+                return `
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
+                                <div class="text-sm text-gray-600 mt-1">
+                                    ${this.state.syncStatus} • Multi-Device Ready
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                    👨‍🍳 Cucina
+                                    ${this.state.activeOrders.length > 0 ? 
+                                        `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
+                                        : ''
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">🔥</div>
+                                <div class="ml-3">
+                                    <p class="text-sm">
+                                        <strong>Firebase Real-Time attivo!</strong><br/>
+                                        Sincronizzazione multi-device funzionante. Apri l'app su smartphone, tablet o altri PC per vedere gli aggiornamenti in tempo reale.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg p-8 shadow-sm border">
+                            <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
+                            
+                            <div class="grid gap-4 justify-center" style="grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto;">
+                                ${this.tables.map(table => {
+                                    const hasDraftOrder = this.state.orders[table.id]?.length > 0;
+                                    const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
+                                    
+                                    let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
+                                    let statusText = 'Libero';
+                                    
+                                    if (hasDraftOrder) {
+                                        bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
+                                        statusText = 'Bozza';
+                                    } else if (activeOrder) {
+                                        bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
+                                        statusText = 'In Cucina';
+                                    }
+                                    
+                                    return `
+                                        <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-lg ${bgColor} hover:border-blue-400">
+                                            <div class="font-bold text-lg">${table.number}</div>
+                                            <div class="text-xs flex items-center gap-1 opacity-80">
+                                                👥 ${table.seats}
+                                            </div>
+                                            
+                                            ${(hasDraftOrder || activeOrder) ? `
+                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
+                                                    ${hasDraftOrder 
+                                                        ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
+                                                        : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
+                                                    }
+                                                </div>
+                                            ` : ''}
+                                            
+                                            <div class="absolute bottom-1 text-xs font-medium">
+                                                ${statusText}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderMenuView() {
+                const table = this.tables.find(t => t.id === this.state.selectedTable);
+                const currentOrder = this.getCurrentOrder();
+                
+                return `
+                    <div class="flex flex-col h-screen bg-gray-50">
+                        <div class="bg-white shadow-sm p-4 flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+                                <h1 class="text-xl font-bold">Tavolo ${table?.number}</h1>
+                            </div>
+                            
+                            ${currentOrder.length > 0 ? `
+                                <div class="flex items-center gap-4">
+                                    <div class="text-lg font-bold text-green-600">€${this.calculateTotal().toFixed(2)}</div>
+                                    <button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        🖨️ Invia in Cucina
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="flex flex-1 overflow-hidden">
+                            <div class="w-1/2 bg-white border-r overflow-y-auto">
+                                ${Object.entries(this.menuCategories).map(([category, items]) => `
+                                    <div class="p-4 border-b">
+                                        <h3 class="font-bold text-lg mb-3 text-gray-800">${category}</h3>
+                                        <div class="grid gap-2">
+                                            ${items.map(item => `
+                                                <div onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="flex justify-between items-start p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all">
+                                                    <div class="flex-1">
+                                                        <div class="font-medium">${item.name}</div>
+                                                        <div class="text-green-600 font-bold">€${item.price.toFixed(2)}</div>
+                                                        ${item.ingredients ? `<div class="text-xs text-gray-600 mt-1">${item.ingredients}</div>` : ''}
+                                                        ${item.description ? `<div class="text-xs text-gray-500 mt-1 italic">${item.description}</div>` : ''}
+                                                    </div>
+                                                    <div class="ml-3 flex-shrink-0">➕</div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="w-1/2 bg-white p-4 overflow-y-auto">
+                                <h3 class="font-bold text-lg mb-4">Ordine Corrente</h3>
+                                
+                                ${currentOrder.length === 0 ? `
+                                    <div class="text-center text-gray-500 mt-8">
+                                        <div class="text-4xl mb-4">📋</div>
+                                        <p>Seleziona gli articoli dal menu</p>
+                                    </div>
+                                ` : `
+                                    <div class="space-y-3">
+                                        ${currentOrder.map(item => `
+                                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <div class="flex-1">
+                                                    <div class="font-medium">${item.name}</div>
+                                                    <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
+                                                </div>
+                                                
+                                                <div class="flex items-center gap-3">
+                                                    <button onclick="app.removeFromOrder(${item.id})" class="p-1 hover:bg-red-100 rounded text-red-600">➖</button>
+                                                    <span class="font-bold w-8 text-center">${item.quantity}</span>
+                                                    <button onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="p-1 hover:bg-green-100 rounded text-green-600">➕</button>
+                                                    <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                        
+                                        <div class="border-t pt-3 mt-4">
+                                            <div class="flex justify-between items-center text-xl font-bold">
+                                                <span>Totale:</span>
+                                                <span class="text-green-600">€${this.calculateTotal().toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderKitchenView() {
+                return `
+                    <div class="p-6 bg-gray-900 min-h-screen text-white">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 class="text-3xl font-bold">👨‍🍳 Dashboard Cucina</h1>
+                                <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus} • Real-time sync attivo</div>
+                            </div>
+                            <div class="flex gap-3">
+                                <div class="bg-red-600 px-4 py-2 rounded-lg">
+                                    <span class="font-bold">Ordini Attivi: ${this.state.activeOrders.length}</span>
+                                </div>
+                                <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                    ✕ Torna ai Tavoli
+                                </button>
+                            </div>
+                        </div>
+                        
+                        ${this.state.activeOrders.length === 0 ? `
+                            <div class="text-center text-gray-400 mt-20">
+                                <div class="text-6xl mb-4">🍽️</div>
+                                <p class="text-xl">Nessun ordine in preparazione</p>
+                                <p class="text-gray-500">Gli ordini appariranno qui quando vengono inviati</p>
+                            </div>
+                        ` : `
+                            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                ${this.state.activeOrders.map(order => {
+                                    const table = this.tables.find(t => t.id === order.tableNumber);
+                                    
+                                    return `
+                                        <div class="rounded-lg p-6 border-2 ${order.isModified ? 'bg-yellow-800 border-yellow-400 ring-2 ring-yellow-400' : 'bg-orange-800 border-orange-400'}">
+                                            <div class="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <h3 class="text-2xl font-bold">Tavolo ${table?.number}</h3>
+                                                    <p class="text-sm opacity-75">${new Date(order.timestamp).toLocaleTimeString('it-IT')}</p>
+                                                    ${order.isModified ? `<div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">⚠️ ORDINE MODIFICATO v.${order.version}</div>` : ''}
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="text-2xl font-bold">€${order.total.toFixed(2)}</div>
+                                                    <div class="text-sm opacity-75">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="space-y-2 mb-4">
+                                                ${order.items.map(item => `
+                                                    <div class="flex justify-between">
+                                                        <span class="font-medium">${item.quantity}x ${item.name}</span>
+                                                        <span>€${(item.price * item.quantity).toFixed(2)}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            
+                                            <button onclick="app.closeOrderFromKitchen(${order.id})" class="w-full bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold">
+                                                💰 Cliente ha Pagato - Libera Tavolo
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+            
+            selectTable(tableId) {
+                const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
+                if (activeOrder) {
+                    this.closeOrderFromWaiter(tableId);
+                } else {
+                    this.setState({ selectedTable: tableId, currentView: 'menu' });
+                }
+            }
+            
+            closeOrderFromWaiter(tableNumber) {
+                const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
+                
+                if (!orderToClose) {
+                    alert('❌ Nessun ordine attivo per questo tavolo!');
+                    return;
+                }
+
+                const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
+                
+                if (!window.confirm(confirmMsg)) {
+                    return;
+                }
+
+                const closedOrder = {
+                    ...orderToClose,
+                    state: 'paid',
+                    closedAt: new Date(),
+                    closedBy: 'waiter'
+                };
+                
+                const updatedHistory = [closedOrder, ...this.state.orderHistory];
+                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
+                
+                this.setState({
+                    orderHistory: updatedHistory,
+                    activeOrders: updatedActiveOrders
+                });
+                
+                firebaseService.update('orderHistory', updatedHistory);
+                firebaseService.update('activeOrders', updatedActiveOrders);
+                
+                alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
+            }
+            
+            attachEventListeners() {
+                // Gli event listeners sono gestiti direttamente nell'HTML tramite onclick
+            }
+        }
+        
+        // Inizializza l'app quando Firebase è pronto
+        window.addEventListener('firebaseReady', () => {
+            setTimeout(() => {
+                const app = new ZenzoBarApp();
+                window.app = app;
+            }, 500);
+        });
+        
+        // Fallback se Firebase non si carica entro 3 secondi
+        setTimeout(() => {
+            if (!window.app) {
+                const app = new ZenzoBarApp();
+                window.app = app;
+            }
+        }, 3000);
+    </script>
 </body>
 </html>
