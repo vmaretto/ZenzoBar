@@ -167,7 +167,8 @@
                     customTables: [],
                     editingTable: null,
                     isOnline: true,
-                    syncStatus: 'Inizializzazione...'
+                    syncStatus: 'Inizializzazione...',
+                    customMenuData: null // Menu caricato da CSV
                 };
                 
                 this.init();
@@ -212,6 +213,11 @@
                             this.setState({ customTables: data });
                         }
                     });
+
+                    const unsubscribeMenu = firebaseService.onSnapshot('menuData', (data) => {
+                        console.log('📨 Ricevuti menuData:', data);
+                        this.setState({ customMenuData: data });
+                    });
                 } catch (error) {
                     console.error('Errore setup Firebase listeners:', error);
                     this.setState({ syncStatus: '❌ Errore connessione' });
@@ -250,8 +256,14 @@
                 appElement.innerHTML = content;
             }
             
-            // Menu categories
+            // Menu categories - usa CSV se disponibile, altrimenti menu di default
             get menuCategories() {
+                // Se c'è un menu personalizzato da CSV, usalo
+                if (this.state.customMenuData) {
+                    return this.state.customMenuData;
+                }
+                
+                // Altrimenti usa il menu di default
                 return {
                     "Cocktail Analcolico": [
                         { id: 1, name: "Acqua Rinfrescante allo Zenzero", price: 6, ingredients: "Zenzero fresco Limone Miele Acqua fredda", description: "Fresco, dissetante, con le note pungenti dello zenzero." },
@@ -499,6 +511,88 @@
                 `;
             }
 
+            async loadMenuFromCSV() {
+                try {
+                    // Leggi il file CSV
+                    const csvContent = await window.fs.readFile('Menu29Giu.csv', { encoding: 'utf8' });
+                    
+                    // Parse del CSV
+                    const Papa = await import('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js');
+                    const parsedData = Papa.default.parse(csvContent, {
+                        header: true,
+                        dynamicTyping: true,
+                        skipEmptyLines: true,
+                        delimiter: ';'
+                    });
+
+                    // Raggruppa per categoria
+                    const menuData = {};
+                    let globalId = 1;
+
+                    // Filtra e raggruppa i dati
+                    const validItems = parsedData.data.filter(item => 
+                        item.CATEGORIA && item.Item && item.PREZZO > 0
+                    );
+
+                    // Raggruppa per categoria
+                    const itemsByCategory = {};
+                    validItems.forEach(item => {
+                        const category = item.CATEGORIA;
+                        if (!itemsByCategory[category]) {
+                            itemsByCategory[category] = [];
+                        }
+                        itemsByCategory[category].push(item);
+                    });
+
+                    // Converte nel formato dell'app
+                    Object.entries(itemsByCategory).forEach(([category, items]) => {
+                        menuData[category] = items.map(item => ({
+                            id: globalId++,
+                            name: item.Item,
+                            price: parseFloat(item.PREZZO) || 0,
+                            ingredients: item['INGREDIENTI PRINCIPALI'] || '',
+                            description: item.STORYTELLING || '',
+                            category: item.CATEGORIA,
+                            popularity: item['POPOLARITÀ'] || '',
+                            photo: item.FOTO || '',
+                            waterFootprint: item['IMPRONTA IDRICA'] || '',
+                            carbonFootprint: item['IMPRONTA CARBONICA'] || ''
+                        }));
+                    });
+
+                    // Salva il menu in Firebase
+                    await firebaseService.update('menuData', menuData);
+                    
+                    // Aggiorna lo stato locale
+                    this.setState({ 
+                        customMenuData: menuData,
+                        syncStatus: '🔥 Menu CSV caricato!'
+                    });
+
+                    const totalItems = globalId - 1;
+                    const categories = Object.keys(menuData).length;
+                    
+                    alert(`✅ MENU CSV CARICATO!\n\n📂 ${categories} categorie\n🍽️ ${totalItems} articoli\n💾 Salvato su Firebase\n\nIl nuovo menu è ora attivo!`);
+
+                } catch (error) {
+                    console.error('Errore caricamento CSV:', error);
+                    alert('❌ Errore nel caricamento del CSV. Controlla che il file sia presente e corretto.');
+                }
+            }
+
+            useDefaultMenu() {
+                const confirmMsg = '⚠️ Tornare al menu di default?\n\nIl menu CSV personalizzato verrà disattivato.';
+                if (!window.confirm(confirmMsg)) return;
+
+                this.setState({ 
+                    customMenuData: null,
+                    syncStatus: '🔥 Menu di default attivato'
+                });
+                
+                firebaseService.update('menuData', null);
+                alert('✅ Menu di default riattivato!');
+            }
+
             editTable(tableId) {
                 this.setState({ editingTable: tableId });
             }
@@ -644,30 +738,65 @@
                         
                         ${this.state.showSettings ? `
                             <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-                                <h3 class="text-lg font-semibold mb-4">Configurazione Tavoli</h3>
+                                <h3 class="text-lg font-semibold mb-4">Configurazione Menu</h3>
                                 
-                                <div class="flex items-center gap-4 mb-6">
-                                    <label class="font-medium">Numero di tavoli:</label>
-                                    <input type="number" min="1" max="20" value="${this.state.tableCount}" 
-                                           onchange="app.setState({tableCount: parseInt(this.value) || 1})"
-                                           class="border rounded px-3 py-2 w-20">
-                                    <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                        📐 Applica Layout
-                                    </button>
-                                    <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                                        🔄 Reset Completo
-                                    </button>
-                                </div>
-                                
-                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">⚠️</div>
-                                        <div class="ml-3 text-sm">
-                                            <p><strong>📐 Applica Layout:</strong> Mantiene le personalizzazioni dei posti, cancella solo gli ordini</p>
-                                            <p><strong>🔄 Reset Completo:</strong> Cancella TUTTO (ordini + personalizzazioni) e ricrea i tavoli da zero</p>
+                                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h4 class="font-medium mb-3 text-blue-800">📋 Gestione Menu</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-medium">Menu attivo:</span>
+                                                <span class="ml-2 px-2 py-1 rounded text-sm ${this.state.customMenuData ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                                    ${this.state.customMenuData ? '📄 Menu CSV' : '🔧 Menu di Default'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        ${this.state.customMenuData ? `
+                                            <div class="text-sm text-gray-600">
+                                                📊 ${Object.keys(this.state.customMenuData).length} categorie • 
+                                                ${Object.values(this.state.customMenuData).reduce((sum, items) => sum + items.length, 0)} articoli totali
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <div class="flex gap-3">
+                                            <button onclick="app.loadMenuFromCSV()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                📂 Carica Menu da CSV
+                                            </button>
+                                            ${this.state.customMenuData ? `
+                                                <button onclick="app.useDefaultMenu()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                                    🔄 Torna al Menu di Default
+                                                </button>
+                                            ` : ''}
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="font-medium mb-3">Configurazione Tavoli</h4>
+                                    
+                                    <div class="flex items-center gap-4 mb-6">
+                                        <label class="font-medium">Numero di tavoli:</label>
+                                        <input type="number" min="1" max="20" value="${this.state.tableCount}" 
+                                               onchange="app.setState({tableCount: parseInt(this.value) || 1})"
+                                               class="border rounded px-3 py-2 w-20">
+                                        <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            📐 Applica Layout
+                                        </button>
+                                        <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                            🔄 Reset Completo
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">⚠️</div>
+                                            <div class="ml-3 text-sm">
+                                                <p><strong>📐 Applica Layout:</strong> Mantiene le personalizzazioni dei posti, cancella solo gli ordini</p>
+                                                <p><strong>🔄 Reset Completo:</strong> Cancella TUTTO (ordini + personalizzazioni) e ricrea i tavoli da zero</p>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                 <div class="border-t pt-4 mt-4">
                                     <h4 class="font-medium mb-3">Modifica Posti per Tavolo:</h4>
