@@ -153,6 +153,28 @@
         
         const firebaseService = new FirebaseService();
         
+        // Funzioni globali per evitare problemi di sintassi
+        window.toggleCat = function(category) {
+            console.log('🔄 Toggle categoria globale:', category);
+            if (window.app && window.app.toggleCategory) {
+                window.app.toggleCategory(category);
+            } else {
+                console.error('❌ App non disponibile');
+            }
+        };
+        
+        window.expandAll = function() {
+            if (window.app && window.app.expandAllCategories) {
+                window.app.expandAllCategories();
+            }
+        };
+        
+        window.collapseAll = function() {
+            if (window.app && window.app.collapseAllCategories) {
+                window.app.collapseAllCategories();
+            }
+        };
+        
         // ZenzoBar App
         class ZenzoBarApp {
             constructor() {
@@ -1122,10 +1144,10 @@
                                     <div class="flex justify-between items-center mb-3">
                                         <h2 class="text-lg font-bold text-gray-800">📋 Menu</h2>
                                         <div class="flex gap-2">
-                                            <button onclick="if(window.app) { app.expandAllCategories(); } else { console.error('App non disponibile'); }" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            <button onclick="window.expandAll()" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
                                                 📂 Espandi Tutto
                                             </button>
-                                            <button onclick="if(window.app) { app.collapseAllCategories(); } else { console.error('App non disponibile'); }" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                            <button onclick="window.collapseAll()" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
                                                 📁 Chiudi Tutto
                                             </button>
                                         </div>
