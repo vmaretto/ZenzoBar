@@ -223,6 +223,33 @@
                 this.render();
             }
             
+            // ✅ METODO RENDER AGGIUNTO - QUESTO ERA IL PROBLEMA PRINCIPALE!
+            render() {
+                const appElement = document.getElementById('app');
+                if (!appElement) return;
+                
+                let content = '';
+                
+                switch(this.state.currentView) {
+                    case 'tables':
+                        content = this.renderTableView();
+                        break;
+                    case 'menu':
+                        content = this.renderMenuView();
+                        break;
+                    case 'kitchen':
+                        content = this.renderKitchenView();
+                        break;
+                    case 'history':
+                        content = this.renderHistoryView();
+                        break;
+                    default:
+                        content = this.renderTableView();
+                }
+                
+                appElement.innerHTML = content;
+            }
+            
             // Menu categories
             get menuCategories() {
                 return {
@@ -357,267 +384,267 @@
             }
             
             closeOrderFromKitchen(orderId) {
-    const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
-    
-    if (!orderToClose) {
-        alert('❌ Ordine non trovato!');
-        return;
-    }
+                const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
+                
+                if (!orderToClose) {
+                    alert('❌ Ordine non trovato!');
+                    return;
+                }
 
-    const closedOrder = {
-        ...orderToClose,
-        state: 'paid',
-        closedAt: new Date(),
-        closedBy: 'kitchen'
-    };
-    
-    const updatedHistory = [closedOrder, ...this.state.orderHistory];
-    const updatedActiveOrders = this.state.activeOrders.filter(order => order.id != orderId);
-    
-    this.setState({ 
-        orderHistory: updatedHistory,
-        activeOrders: updatedActiveOrders
-    });
-    
-    firebaseService.update('orderHistory', updatedHistory);
-    firebaseService.update('activeOrders', updatedActiveOrders);
-    
-    alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
-}
+                const closedOrder = {
+                    ...orderToClose,
+                    state: 'paid',
+                    closedAt: new Date(),
+                    closedBy: 'kitchen'
+                };
+                
+                const updatedHistory = [closedOrder, ...this.state.orderHistory];
+                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id != orderId);
+                
+                this.setState({ 
+                    orderHistory: updatedHistory,
+                    activeOrders: updatedActiveOrders
+                });
+                
+                firebaseService.update('orderHistory', updatedHistory);
+                firebaseService.update('activeOrders', updatedActiveOrders);
+                
+                alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
+            }
 
             closeOrderFromWaiter(tableNumber) {
-    const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
-    
-    if (!orderToClose) {
-        alert('❌ Nessun ordine attivo per questo tavolo!');
-        return;
-    }
+                const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
+                
+                if (!orderToClose) {
+                    alert('❌ Nessun ordine attivo per questo tavolo!');
+                    return;
+                }
 
-    const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
-    
-    if (!window.confirm(confirmMsg)) {
-        return;
-    }
+                const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
+                
+                if (!window.confirm(confirmMsg)) {
+                    return;
+                }
 
-    const closedOrder = {
-        ...orderToClose,
-        state: 'paid',
-        closedAt: new Date(),
-        closedBy: 'waiter'
-    };
-    
-    const updatedHistory = [closedOrder, ...this.state.orderHistory];
-    const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
-    
-    this.setState({
-        orderHistory: updatedHistory,
-        activeOrders: updatedActiveOrders
-    });
-    
-    firebaseService.update('orderHistory', updatedHistory);
-    firebaseService.update('activeOrders', updatedActiveOrders);
-    
-    alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
-}
+                const closedOrder = {
+                    ...orderToClose,
+                    state: 'paid',
+                    closedAt: new Date(),
+                    closedBy: 'waiter'
+                };
+                
+                const updatedHistory = [closedOrder, ...this.state.orderHistory];
+                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
+                
+                this.setState({
+                    orderHistory: updatedHistory,
+                    activeOrders: updatedActiveOrders
+                });
+                
+                firebaseService.update('orderHistory', updatedHistory);
+                firebaseService.update('activeOrders', updatedActiveOrders);
+                
+                alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
+            }
             
             renderHistoryView() {
-    return `
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
-                <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                    ✕ Chiudi
-                </button>
-            </div>
-            
-            ${this.state.orderHistory.length === 0 ? `
-                <div class="text-center text-gray-500 mt-12">
-                    <div class="text-6xl mb-4">🕐</div>
-                    <p>Nessun ordine chiuso oggi</p>
-                    <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
-                </div>
-            ` : `
-                <div class="space-y-4">
-                    ${this.state.orderHistory.map(order => `
-                        <div class="bg-white rounded-lg shadow p-4 border">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
-                                    <p class="text-gray-600 text-sm">Ordinato: ${new Date(order.timestamp).toLocaleString('it-IT')}</p>
-                                    <p class="text-gray-600 text-sm">Chiuso: ${new Date(order.closedAt).toLocaleString('it-IT')}</p>
-                                    <p class="text-blue-600 text-sm font-medium">
-                                        Incassato da: ${order.closedBy === 'kitchen' ? '👨‍🍳 Cucina' : '👤 Cameriere'}
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-2xl font-bold text-green-600">€${order.total.toFixed(2)}</div>
-                                    <div class="text-sm text-gray-500">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
-                                    <div class="text-xs text-green-600 font-medium mt-1">💰 PAGATO</div>
-                                </div>
+                return `
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
+                            <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                ✕ Chiudi
+                            </button>
+                        </div>
+                        
+                        ${this.state.orderHistory.length === 0 ? `
+                            <div class="text-center text-gray-500 mt-12">
+                                <div class="text-6xl mb-4">🕐</div>
+                                <p>Nessun ordine chiuso oggi</p>
+                                <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
                             </div>
-                            
-                            <div class="border-t pt-3">
-                                ${order.items.map(item => `
-                                    <div class="flex justify-between text-sm mb-1">
-                                        <span>${item.quantity}x ${item.name}</span>
-                                        <span>€${(item.price * item.quantity).toFixed(2)}</span>
+                        ` : `
+                            <div class="space-y-4">
+                                ${this.state.orderHistory.map(order => `
+                                    <div class="bg-white rounded-lg shadow p-4 border">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
+                                                <p class="text-gray-600 text-sm">Ordinato: ${new Date(order.timestamp).toLocaleString('it-IT')}</p>
+                                                <p class="text-gray-600 text-sm">Chiuso: ${new Date(order.closedAt).toLocaleString('it-IT')}</p>
+                                                <p class="text-blue-600 text-sm font-medium">
+                                                    Incassato da: ${order.closedBy === 'kitchen' ? '👨‍🍳 Cucina' : '👤 Cameriere'}
+                                                </p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-2xl font-bold text-green-600">€${order.total.toFixed(2)}</div>
+                                                <div class="text-sm text-gray-500">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
+                                                <div class="text-xs text-green-600 font-medium mt-1">💰 PAGATO</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="border-t pt-3">
+                                            ${order.items.map(item => `
+                                                <div class="flex justify-between text-sm mb-1">
+                                                    <span>${item.quantity}x ${item.name}</span>
+                                                    <span>€${(item.price * item.quantity).toFixed(2)}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `}
-        </div>
-    `;
-}
+                        `}
+                    </div>
+                `;
+            }
 
             resetTables() {
-    // Avvisa SEMPRE se ci sono ordini
-    const hasActiveOrders = this.state.activeOrders.length > 0;
-    const hasDraftOrders = Object.keys(this.state.orders).length > 0;
-    
-    if (hasActiveOrders || hasDraftOrders) {
-        const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
-        const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
-        
-        if (!window.confirm(confirmMsg)) {
-            return;
-        }
-    }
-    
-    // Genera il nuovo layout di tavoli
-    const newTables = [];
-    for (let i = 0; i < this.state.tableCount; i++) {
-        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
-        newTables.push({ id: i + 1, number: i + 1, seats: seats });
-    }
-    
-    // RESET TOTALE - cancella TUTTI gli ordini
-    this.setState({ 
-        customTables: newTables,
-        editingTable: null, 
-        showSettings: false,
-        orders: {},           // Ordini in bozza
-        activeOrders: []      // Ordini in cucina - CANCELLATI!
-        // orderHistory rimane per non perdere lo storico
-    });
-    
-    // Aggiorna Firebase - CANCELLA TUTTO
-    firebaseService.update('tables', newTables);
-    firebaseService.update('orders', {});
-    firebaseService.update('activeOrders', []); // Cancella anche dalla cucina
-    
-    alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutti gli ordini cancellati\n• Layout applicato`);
-}
+                // Avvisa SEMPRE se ci sono ordini
+                const hasActiveOrders = this.state.activeOrders.length > 0;
+                const hasDraftOrders = Object.keys(this.state.orders).length > 0;
+                
+                if (hasActiveOrders || hasDraftOrders) {
+                    const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
+                    const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
+                    
+                    if (!window.confirm(confirmMsg)) {
+                        return;
+                    }
+                }
+                
+                // Genera il nuovo layout di tavoli
+                const newTables = [];
+                for (let i = 0; i < this.state.tableCount; i++) {
+                    const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+                    newTables.push({ id: i + 1, number: i + 1, seats: seats });
+                }
+                
+                // RESET TOTALE - cancella TUTTI gli ordini
+                this.setState({ 
+                    customTables: newTables,
+                    editingTable: null, 
+                    showSettings: false,
+                    orders: {},           // Ordini in bozza
+                    activeOrders: []      // Ordini in cucina - CANCELLATI!
+                    // orderHistory rimane per non perdere lo storico
+                });
+                
+                // Aggiorna Firebase - CANCELLA TUTTO
+                firebaseService.update('tables', newTables);
+                firebaseService.update('orders', {});
+                firebaseService.update('activeOrders', []); // Cancella anche dalla cucina
+                
+                alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutti gli ordini cancellati\n• Layout applicato`);
+            }
             
             renderTableView() {
-    return `
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
-                    <div class="text-sm text-gray-600 mt-1">
-                        ${this.state.syncStatus} • Multi-Device Ready
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        👨‍🍳 Cucina
-                        ${this.state.activeOrders.length > 0 ? 
-                            `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
-                            : ''
-                        }
-                    </button>
-                    <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                        ⚙️ Configura
-                    </button>
-                    <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        🕐 Storico
-                    </button>
-                </div>
-            </div>
-            
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
-                <div class="flex">
-                    <div class="flex-shrink-0">🔥</div>
-                    <div class="ml-3">
-                        <p class="text-sm">
-                            <strong>Firebase Real-Time attivo!</strong><br/>
-                            Sincronizzazione multi-device funzionante. Apri l'app su smartphone, tablet o altri PC per vedere gli aggiornamenti in tempo reale.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            ${this.state.showSettings ? `
-                <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-                    <h3 class="text-lg font-semibold mb-4">Configurazione Tavoli</h3>
-                    
-                    <div class="flex items-center gap-4 mb-6">
-                        <label class="font-medium">Numero di tavoli:</label>
-                        <input type="number" min="1" max="20" value="${this.state.tableCount}" 
-                               onchange="app.setState({tableCount: parseInt(this.value) || 1})"
-                               class="border rounded px-3 py-2 w-20">
-                        <button onclick="app.resetTables()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                            Applica Layout
-                        </button>
-                    </div>
-
-                    <div class="border-t pt-4 mt-4">
-                        <button onclick="app.setState({showSettings: false})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                            Chiudi Configurazione
-                        </button>
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div class="bg-white rounded-lg p-8 shadow-sm border">
-                <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
-                
-                <div class="grid gap-4 justify-center" style="grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto;">
-                    ${this.tables.map(table => {
-                        const hasDraftOrder = this.state.orders[table.id]?.length > 0;
-                        const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
-                        
-                        let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
-                        let statusText = 'Libero';
-                        
-                        if (hasDraftOrder) {
-                            bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
-                            statusText = 'Bozza';
-                        } else if (activeOrder) {
-                            bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
-                            statusText = 'In Cucina';
-                        }
-                        
-                        return `
-                            <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-lg ${bgColor} hover:border-blue-400">
-                                <div class="font-bold text-lg">${table.number}</div>
-                                <div class="text-xs flex items-center gap-1 opacity-80">
-                                    👥 ${table.seats}
-                                </div>
-                                
-                                ${(hasDraftOrder || activeOrder) ? `
-                                    <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
-                                        ${hasDraftOrder 
-                                            ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
-                                            : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
-                                        }
-                                    </div>
-                                ` : ''}
-                                
-                                <div class="absolute bottom-1 text-xs font-medium">
-                                    ${statusText}
+                return `
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
+                                <div class="text-sm text-gray-600 mt-1">
+                                    ${this.state.syncStatus} • Multi-Device Ready
                                 </div>
                             </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-}
+                            <div class="flex gap-3">
+                                <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                    👨‍🍳 Cucina
+                                    ${this.state.activeOrders.length > 0 ? 
+                                        `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
+                                        : ''
+                                    }
+                                </button>
+                                <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                    ⚙️ Configura
+                                </button>
+                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    🕐 Storico
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">🔥</div>
+                                <div class="ml-3">
+                                    <p class="text-sm">
+                                        <strong>Firebase Real-Time attivo!</strong><br/>
+                                        Sincronizzazione multi-device funzionante. Apri l'app su smartphone, tablet o altri PC per vedere gli aggiornamenti in tempo reale.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${this.state.showSettings ? `
+                            <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
+                                <h3 class="text-lg font-semibold mb-4">Configurazione Tavoli</h3>
+                                
+                                <div class="flex items-center gap-4 mb-6">
+                                    <label class="font-medium">Numero di tavoli:</label>
+                                    <input type="number" min="1" max="20" value="${this.state.tableCount}" 
+                                           onchange="app.setState({tableCount: parseInt(this.value) || 1})"
+                                           class="border rounded px-3 py-2 w-20">
+                                    <button onclick="app.resetTables()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                        Applica Layout
+                                    </button>
+                                </div>
+
+                                <div class="border-t pt-4 mt-4">
+                                    <button onclick="app.setState({showSettings: false})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                        Chiudi Configurazione
+                                    </button>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="bg-white rounded-lg p-8 shadow-sm border">
+                            <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
+                            
+                            <div class="grid gap-4 justify-center" style="grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto;">
+                                ${this.tables.map(table => {
+                                    const hasDraftOrder = this.state.orders[table.id]?.length > 0;
+                                    const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
+                                    
+                                    let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
+                                    let statusText = 'Libero';
+                                    
+                                    if (hasDraftOrder) {
+                                        bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
+                                        statusText = 'Bozza';
+                                    } else if (activeOrder) {
+                                        bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
+                                        statusText = 'In Cucina';
+                                    }
+                                    
+                                    return `
+                                        <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-lg ${bgColor} hover:border-blue-400">
+                                            <div class="font-bold text-lg">${table.number}</div>
+                                            <div class="text-xs flex items-center gap-1 opacity-80">
+                                                👥 ${table.seats}
+                                            </div>
+                                            
+                                            ${(hasDraftOrder || activeOrder) ? `
+                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
+                                                    ${hasDraftOrder 
+                                                        ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
+                                                        : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
+                                                    }
+                                                </div>
+                                            ` : ''}
+                                            
+                                            <div class="absolute bottom-1 text-xs font-medium">
+                                                ${statusText}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
             
             renderMenuView() {
                 const table = this.tables.find(t => t.id === this.state.selectedTable);
@@ -775,45 +802,6 @@
                     this.setState({ selectedTable: tableId, currentView: 'menu' });
                 }
             }
-            
-            closeOrderFromWaiter(tableNumber) {
-                const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
-                
-                if (!orderToClose) {
-                    alert('❌ Nessun ordine attivo per questo tavolo!');
-                    return;
-                }
-
-                const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
-                
-                if (!window.confirm(confirmMsg)) {
-                    return;
-                }
-
-                const closedOrder = {
-                    ...orderToClose,
-                    state: 'paid',
-                    closedAt: new Date(),
-                    closedBy: 'waiter'
-                };
-                
-                const updatedHistory = [closedOrder, ...this.state.orderHistory];
-                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
-                
-                this.setState({
-                    orderHistory: updatedHistory,
-                    activeOrders: updatedActiveOrders
-                });
-                
-                firebaseService.update('orderHistory', updatedHistory);
-                firebaseService.update('activeOrders', updatedActiveOrders);
-                
-                alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
-            }
-            
-            attachEventListeners() {
-                // Gli event listeners sono gestiti direttamente nell'HTML tramite onclick
-            }
         }
         
         // Inizializza l'app quando Firebase è pronto
@@ -821,12 +809,14 @@
             setTimeout(() => {
                 const app = new ZenzoBarApp();
                 window.app = app;
+                console.log('✅ ZenzoBar App inizializzata correttamente!');
             }, 500);
         });
         
         // Fallback se Firebase non si carica entro 3 secondi
         setTimeout(() => {
             if (!window.app) {
+                console.log('⚠️ Inizializzazione app con fallback...');
                 const app = new ZenzoBarApp();
                 window.app = app;
             }
