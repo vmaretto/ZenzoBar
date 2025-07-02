@@ -524,32 +524,61 @@
                             reader.readAsText(file, 'utf-8');
                         });
                     } else {
-                        // File predefinito (se esiste)
+                        // File predefinito (prova entrambi i nomi)
                         try {
-                            csvContent = await window.fs.readFile('Menu29Giu.csv', { encoding: 'utf8' });
+                            csvContent = await window.fs.readFile('Menu29Giu copia.csv', { encoding: 'utf8' });
                         } catch (error) {
-                            alert('❌ File Menu29Giu.csv non trovato. Seleziona un file CSV da caricare.');
-                            return;
+                            try {
+                                csvContent = await window.fs.readFile('Menu29Giu.csv', { encoding: 'utf8' });
+                            } catch (error2) {
+                                alert('❌ File CSV non trovato. Seleziona un file CSV da caricare.');
+                                return;
+                            }
                         }
                     }
                     
-                    // Parse del CSV
+                    // Parse del CSV con auto-detect del delimitatore
                     const Papa = await import('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js');
                     const parsedData = Papa.default.parse(csvContent, {
                         header: true,
                         dynamicTyping: true,
                         skipEmptyLines: true,
-                        delimiter: ','
+                        delimitersToGuess: [';', ',', '\t', '|']
                     });
 
-                    // Raggruppa per categoria
-                    const menuData = {};
-                    let globalId = 1;
+                    console.log('📊 CSV Parser Results:', {
+                        delimiter: parsedData.meta.delimiter,
+                        fields: parsedData.meta.fields,
+                        rowCount: parsedData.data.length,
+                        errors: parsedData.errors
+                    });
+
+                    // Verifica che ci siano i campi necessari
+                    const requiredFields = ['Item', 'CATEGORIA', 'PREZZO'];
+                    const missingFields = requiredFields.filter(field => 
+                        !parsedData.meta.fields.includes(field)
+                    );
+
+                    if (missingFields.length > 0) {
+                        throw new Error(`Campi mancanti nel CSV: ${missingFields.join(', ')}`);
+                    }
 
                     // Filtra e raggruppa i dati
-                    const validItems = parsedData.data.filter(item => 
-                        item.CATEGORIA && item.Item && item.PREZZO > 0
-                    );
+                    const validItems = parsedData.data.filter(item => {
+                        const isValid = item.CATEGORIA && item.Item && item.PREZZO && item.PREZZO > 0;
+                        if (!isValid) {
+                            console.log('⚠️ Articolo scartato:', {
+                                Item: item.Item || 'MANCANTE',
+                                CATEGORIA: item.CATEGORIA || 'MANCANTE',
+                                PREZZO: item.PREZZO || 'MANCANTE'
+                            });
+                        }
+                        return isValid;
+                    });
+
+                    if (validItems.length === 0) {
+                        throw new Error('Nessun articolo valido trovato nel CSV');
+                    }
 
                     // Raggruppa per categoria
                     const itemsByCategory = {};
@@ -562,6 +591,9 @@
                     });
 
                     // Converte nel formato dell'app
+                    const menuData = {};
+                    let globalId = 1;
+
                     Object.entries(itemsByCategory).forEach(([category, items]) => {
                         menuData[category] = items.map(item => ({
                             id: globalId++,
@@ -575,6 +607,11 @@
                             waterFootprint: item['IMPRONTA IDRICA'] || '',
                             carbonFootprint: item['IMPRONTA CARBONICA'] || ''
                         }));
+                    });
+
+                    console.log('✅ Menu convertito:', {
+                        categories: Object.keys(menuData),
+                        totalItems: globalId - 1
                     });
 
                     // Salva il menu in Firebase
@@ -592,8 +629,8 @@
                     alert(`✅ MENU CSV CARICATO!\n\n📂 ${categories} categorie\n🍽️ ${totalItems} articoli\n💾 Salvato su Firebase\n\nIl nuovo menu è ora attivo!`);
 
                 } catch (error) {
-                    console.error('Errore caricamento CSV:', error);
-                    alert('❌ Errore nel caricamento del CSV. Controlla che il formato sia corretto.\n\nFormato richiesto:\n- Delimitatore: , (virgola)\n- Campi: Item, CATEGORIA, PREZZO, INGREDIENTI PRINCIPALI, STORYTELLING');
+                    console.error('❌ Errore caricamento CSV:', error);
+                    alert(`❌ Errore nel caricamento del CSV:\n\n${error.message}\n\nVerifica che il formato sia corretto:\n- Campi richiesti: Item, CATEGORIA, PREZZO\n- Delimitatori supportati: ; , | tab`);
                 }
             }
 
@@ -795,7 +832,7 @@
                                                 📂 Seleziona File CSV
                                             </button>
                                             <button onclick="app.loadMenuFromCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                                                📄 Carica Menu29Giu.csv
+                                                📄 Carica Menu CSV
                                             </button>
                                             ${this.state.customMenuData ? `
                                                 <button onclick="app.useDefaultMenu()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
@@ -807,8 +844,8 @@
                                         <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-600">
                                             <strong>💡 Come usare:</strong><br/>
                                             • <strong>📂 Seleziona File CSV:</strong> Carica un nuovo file CSV dal tuo computer<br/>
-                                            • <strong>📄 Carica Menu29Giu.csv:</strong> Usa il file predefinito se già caricato nell'app<br/>
-                                            • <strong>Formato richiesto:</strong> Item;CATEGORIA;PREZZO;INGREDIENTI PRINCIPALI;STORYTELLING
+                                            • <strong>📄 Carica Menu CSV:</strong> Usa il file predefinito se già caricato nell'app<br/>
+                                            • <strong>Formato richiesto:</strong> Item,CATEGORIA,PREZZO (delimitatori: ; , | tab)
                                         </div>
                                     </div>
                                 </div>
