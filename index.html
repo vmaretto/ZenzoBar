@@ -163,6 +163,22 @@
             }
         };
         
+        window.toggleCatByIndex = function(categoryIndex) {
+            console.log('🔄 Toggle categoria per indice:', categoryIndex);
+            if (window.app && window.app.menuCategories) {
+                const categories = Object.keys(window.app.menuCategories);
+                const category = categories[categoryIndex];
+                console.log('📂 Categoria trovata:', category);
+                if (category && window.app.toggleCategory) {
+                    window.app.toggleCategory(category);
+                } else {
+                    console.error('❌ Categoria non trovata per indice:', categoryIndex);
+                }
+            } else {
+                console.error('❌ App o menuCategories non disponibile');
+            }
+        };
+        
         window.expandAll = function() {
             if (window.app && window.app.expandAllCategories) {
                 window.app.expandAllCategories();
