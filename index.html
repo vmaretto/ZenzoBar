@@ -755,6 +755,28 @@
                         </div>
                         
                         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+                        ${this.state.showSettings ? `
+    <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
+        <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
+
+        <div class="flex items-center gap-4 mb-6">
+            <label class="font-medium">Numero di tavoli:</label>
+            <input type="number" min="1" max="20" value="${this.state.tableCount}" 
+                   onchange="app.setState({tableCount: parseInt(this.value) || 1})"
+                   class="border rounded px-3 py-2 w-20">
+            <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                📐 Applica Layout
+            </button>
+            <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                🔄 Reset Completo
+            </button>
+        </div>
+
+        <button onclick="app.setState({showSettings: false})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+            Chiudi Configurazione
+        </button>
+    </div>
+` : ''}
                             <div class="flex">
                                 <div class="flex-shrink-0">🔥</div>
                                 <div class="ml-3">
@@ -1070,6 +1092,49 @@
                 }
             }
         }
+
+async applyTableLayout() {
+    const newTables = [];
+    for (let i = 0; i < this.state.tableCount; i++) {
+        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+        newTables.push({ id: i + 1, number: i + 1, seats: seats });
+    }
+
+    this.setState({ 
+        customTables: newTables,
+        orders: {},
+        activeOrders: []
+    });
+
+    await firebaseService.update('tables', newTables);
+    await firebaseService.update('orders', {});
+    await firebaseService.update('activeOrders', []);
+
+    alert(`✅ LAYOUT APPLICATO! Tavoli: ${this.state.tableCount}`);
+}
+
+async resetTables() {
+    if (!window.confirm('⚠️ RESET COMPLETO! Cancellare tutto?')) return;
+
+    const newTables = [];
+    for (let i = 0; i < this.state.tableCount; i++) {
+        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+        newTables.push({ id: i + 1, number: i + 1, seats: seats });
+    }
+
+    this.setState({ 
+        customTables: newTables,
+        showSettings: false,
+        orders: {},
+        activeOrders: []
+    });
+
+    await firebaseService.update('tables', newTables);
+    await firebaseService.update('orders', {});
+    await firebaseService.update('activeOrders', []);
+
+    alert('✅ RESET COMPLETO ESEGUITO!');
+}
         
         // Inizializza l'app quando Firebase è pronto
         window.addEventListener('firebaseReady', () => {
