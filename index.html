@@ -93,6 +93,7 @@
                 </button>
             </div>
         </div>
+        </div>
 
         <div id="aiAnalyticsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
     <div class="bg-white rounded-lg p-6 w-full max-w-6xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -109,7 +110,7 @@
     </div>
 </div>
         
-    </div>
+    
     
     <script>
         // Firebase Service
@@ -1027,6 +1028,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                         </div>
                         
                         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+    <p>🤖 Sistema AI attivo • Completa alcuni ordini per sbloccare le analisi intelligenti</p>
                         ${this.state.showSettings ? `
 <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
     <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
@@ -1052,7 +1054,8 @@ const dateKey = ts.toLocaleDateString('it-IT');
     </button>
 </div>
 ` : ''}
-                        
+                
+                </div> 
                         
                         <div class="bg-white rounded-lg p-8 shadow-sm border">
                             <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
