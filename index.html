@@ -818,19 +818,28 @@
                 const currentOrder = this.getCurrentOrder();
                 const categories = Object.keys(this.menuCategories);
                 
+                // Controlla se stiamo modificando un ordine esistente
+                const existingOrder = this.state.activeOrders.find(order => order.tableNumber === this.state.selectedTable);
+                const isModifying = existingOrder && currentOrder.some(item => item.isFromActiveOrder);
+                
                 return `
                     <div class="flex flex-col h-screen bg-gray-50">
                         <div class="bg-white shadow-sm p-4 flex justify-between items-center">
                             <div class="flex items-center gap-4">
                                 <button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg">✕</button>
                                 <h1 class="text-xl font-bold">Tavolo ${table?.number}</h1>
+                                ${isModifying ? `
+                                    <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        ✏️ Modalità Modifica (v.${(existingOrder?.version || 1) + 1})
+                                    </div>
+                                ` : ''}
                             </div>
                             
                             <div class="flex items-center gap-4">
                                 ${currentOrder.length > 0 ? `
                                     <div class="text-lg font-bold text-green-600">€${this.calculateTotal().toFixed(2)}</div>
-                                    <button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                        🖨️ Invia in Cucina
+                                    <button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 ${isModifying ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg transition-colors">
+                                        ${isModifying ? '🔄 Aggiorna Ordine' : '🖨️ Invia in Cucina'}
                                     </button>
                                 ` : ''}
                                 <button onclick="app.showFreeOrderModal()" class="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
@@ -838,6 +847,22 @@
                                 </button>
                             </div>
                         </div>
+
+                        ${isModifying ? `
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">⚠️</div>
+                                    <div class="ml-3">
+                                        <p class="text-sm">
+                                            <strong>Stai modificando un ordine già in cucina!</strong><br/>
+                                            • Ordine originale: €${existingOrder?.total?.toFixed(2)} (${existingOrder?.items?.reduce((sum, item) => sum + item.quantity, 0)} articoli)<br/>
+                                            • Inviato: ${existingOrder ? new Date(existingOrder.timestamp).toLocaleTimeString('it-IT') : ''}<br/>
+                                            • Le modifiche sostituiranno completamente l'ordine precedente
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
 
                         <div class="flex flex-1 overflow-hidden">
                             <div class="w-1/2 bg-white border-r overflow-y-auto">
@@ -855,6 +880,7 @@
                                     </div>
                                     <div class="text-sm text-gray-600">
                                         👆 Clicca su una categoria per espanderla • 📝 per note • 🆓 per ordini liberi
+                                        ${isModifying ? `<br/>✏️ <strong>Modalità modifica attiva</strong> - aggiungi o rimuovi articoli` : ''}
                                     </div>
                                 </div>
 
@@ -894,6 +920,96 @@
                                                                         </div>
                                                                     ` : ''}
                                                                     ${item.description ? `
+                                                                        <div class="text-xs text-gray-500 mt-1 italic leading-relaxed">
+                                                                            💭 ${item.description.replace(/\n/g, ' ')}
+                                                                        </div>
+                                                                    ` : ''}
+                                                                </div>
+                                                                <div class="ml-3 flex-shrink-0 flex flex-col gap-2">
+                                                                    <button onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-green-100 hover:bg-green-200 rounded-full transition-colors">
+                                                                        <span class="text-green-600 font-bold">+</span>
+                                                                    </button>
+                                                                    <button onclick="app.showNoteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors" title="Aggiungi con nota">
+                                                                        <span class="text-blue-600 font-bold">📝</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+
+                                <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 shadow-sm">
+                                    <div class="text-center text-sm text-gray-600">
+                                        📊 ${categories.length} categorie • ${Object.values(this.menuCategories).reduce((sum, items) => sum + items.length, 0)} articoli totali
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-1/2 bg-white p-4 overflow-y-auto">
+                                <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
+                                
+                                ${currentOrder.length === 0 ? `
+                                    <div class="text-center text-gray-500 mt-8">
+                                        <div class="text-4xl mb-4">📋</div>
+                                        <p class="text-lg">Seleziona gli articoli dal menu</p>
+                                        <p class="text-sm text-gray-400 mt-2">📝 Clicca l'icona nota per personalizzare</p>
+                                        <p class="text-sm text-gray-400 mt-1">🆓 Usa "Ordine Libero" per articoli non in menu</p>
+                                        ${isModifying ? `<p class="text-sm text-yellow-600 mt-2 font-medium">✏️ In modalità modifica - cancella tutto per annullare</p>` : ''}
+                                    </div>
+                                ` : `
+                                    <div class="space-y-3">
+                                        ${currentOrder.map((item, index) => `
+                                            <div class="flex justify-between items-start p-3 ${item.isFromActiveOrder ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50'} rounded-lg border">
+                                                <div class="flex-1">
+                                                    <div class="font-medium">${item.name}</div>
+                                                    <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
+                                                    ${item.isFreeOrder ? `<div class="text-xs text-purple-600 font-medium">🆓 Ordine libero</div>` : ''}
+                                                    ${item.isFromActiveOrder ? `<div class="text-xs text-yellow-700 font-medium">🔄 Dall'ordine in cucina</div>` : ''}
+                                                    ${item.ingredients ? `<div class="text-xs text-gray-500 mt-1">🧄 ${item.ingredients.replace(/\n/g, ', ')}</div>` : ''}
+                                                    ${item.note ? `
+                                                        <div class="text-xs text-blue-600 mt-1 font-medium bg-blue-50 p-1 rounded">
+                                                            📝 ${item.note}
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                
+                                                <div class="flex items-center gap-2 ml-3">
+                                                    <div class="flex flex-col gap-1">
+                                                        <button onclick="app.removeFromOrder(${index})" class="w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full text-red-600 transition-colors">−</button>
+                                                        ${item.note || item.isFreeOrder ? `
+                                                            <button onclick="app.showNoteModal(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')}, ${index})" class="w-8 h-8 flex items-center justify-center bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 transition-colors" title="Modifica nota">
+                                                                📝
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                    <span class="font-bold w-8 text-center">${item.quantity}</span>
+                                                    <button onclick="app.addToOrder(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')})" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600 transition-colors">+</button>
+                                                    <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                        
+                                        <div class="border-t pt-3 mt-4 ${isModifying ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50'} rounded-lg p-4">
+                                            <div class="flex justify-between items-center text-xl font-bold">
+                                                <span>💰 Totale:</span>
+                                                <span class="${isModifying ? 'text-orange-600' : 'text-green-600'}">€${this.calculateTotal().toFixed(2)}</span>
+                                            </div>
+                                            <div class="text-sm text-gray-600 mt-1 text-center">
+                                                ${currentOrder.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello
+                                                ${isModifying ? `<br/><span class="text-yellow-700 font-medium">Differenza: €${(this.calculateTotal() - (existingOrder?.total || 0)).toFixed(2)}</span>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }description ? `
                                                                         <div class="text-xs text-gray-500 mt-1 italic leading-relaxed">
                                                                             💭 ${item.description.replace(/\n/g, ' ')}
                                                                         </div>
@@ -988,7 +1104,7 @@
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h1 class="text-3xl font-bold">👨‍🍳 Dashboard Cucina</h1>
-                                <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus} • Con supporto note e ordini liberi</div>
+                                <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus} • Con supporto modifiche, note e ordini liberi</div>
                             </div>
                             <div class="flex gap-3">
                                 <div class="bg-red-600 px-4 py-2 rounded-lg">
@@ -1012,12 +1128,25 @@
                                     const table = this.tables.find(t => t.id === order.tableNumber);
                                     
                                     return `
-                                        <div class="rounded-lg p-6 border-2 ${order.isModified ? 'bg-yellow-800 border-yellow-400 ring-2 ring-yellow-400' : 'bg-orange-800 border-orange-400'}">
+                                        <div class="rounded-lg p-6 border-2 ${
+                                            order.state === 'modified' ? 'bg-yellow-800 border-yellow-400 ring-2 ring-yellow-400' : 
+                                            order.isModified ? 'bg-orange-800 border-orange-400 ring-2 ring-orange-400' : 
+                                            'bg-orange-800 border-orange-400'
+                                        }">
                                             <div class="flex justify-between items-start mb-4">
                                                 <div>
                                                     <h3 class="text-2xl font-bold">Tavolo ${table?.number}</h3>
-                                                    <p class="text-sm opacity-75">${new Date(order.timestamp).toLocaleTimeString('it-IT')}</p>
-                                                    ${order.isModified ? `<div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">⚠️ ORDINE MODIFICATO v.${order.version}</div>` : ''}
+                                                    <p class="text-sm opacity-75">Ordinato: ${new Date(order.timestamp).toLocaleTimeString('it-IT')}</p>
+                                                    ${order.modifiedAt ? `<p class="text-sm opacity-75">Modificato: ${new Date(order.modifiedAt).toLocaleTimeString('it-IT')}</p>` : ''}
+                                                    ${order.state === 'modified' ? `
+                                                        <div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">
+                                                            🔄 APPENA MODIFICATO v.${order.version}
+                                                        </div>
+                                                    ` : order.isModified ? `
+                                                        <div class="bg-orange-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">
+                                                            ⚠️ MODIFICATO v.${order.version}
+                                                        </div>
+                                                    ` : ''}
                                                 </div>
                                                 <div class="text-right">
                                                     <div class="text-2xl font-bold">€${order.total.toFixed(2)}</div>
@@ -1049,9 +1178,16 @@
                                                 `).join('')}
                                             </div>
                                             
-                                            <button onclick="app.closeOrderFromKitchen(${order.id})" class="w-full bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold">
-                                                💰 Cliente ha Pagato - Libera Tavolo
-                                            </button>
+                                            <div class="flex gap-2">
+                                                <button onclick="app.closeOrderFromKitchen(${order.id})" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold">
+                                                    💰 Cliente ha Pagato
+                                                </button>
+                                                ${order.state === 'modified' ? `
+                                                    <button onclick="app.acknowledgeModification(${order.id})" class="px-3 py-3 bg-yellow-600 hover:bg-yellow-700 rounded font-bold text-xs">
+                                                        ✓ Visto
+                                                    </button>
+                                                ` : ''}
+                                            </div>
                                         </div>
                                     `;
                                 }).join('')}
@@ -1060,13 +1196,190 @@
                     </div>
                 `;
             }
+
+            async acknowledgeModification(orderId) {
+                console.log('✓ Riconosci modifica per ordine:', orderId);
+                
+                const updatedActiveOrders = this.state.activeOrders.map(order => 
+                    order.id === orderId 
+                        ? { ...order, state: 'sent', acknowledgedAt: new Date() }
+                        : order
+                );
+                
+                this.setState({ activeOrders: updatedActiveOrders });
+                await firebaseService.update('activeOrders', updatedActiveOrders);
+                
+                console.log('✅ Modifica riconosciuta dalla cucina');
+            }
             
             selectTable(tableId) {
                 const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
                 if (activeOrder) {
-                    this.closeOrderFromWaiter(tableId);
+                    // Tavolo con ordine attivo - mostra opzioni
+                    this.showTableOptionsModal(tableId, activeOrder);
                 } else {
+                    // Tavolo libero o con bozza - vai al menu
                     this.setState({ selectedTable: tableId, currentView: 'menu' });
+                }
+            }
+
+            showTableOptionsModal(tableId, activeOrder) {
+                const table = this.tables.find(t => t.id === tableId);
+                const itemCount = activeOrder.items.reduce((sum, item) => sum + item.quantity, 0);
+                
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+                        <h3 class="text-lg font-bold mb-4">🍽️ Tavolo ${table.number}</h3>
+                        
+                        <div class="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div class="font-medium text-orange-800">Ordine in Cucina</div>
+                            <div class="text-sm text-orange-600 mt-1">
+                                €${activeOrder.total.toFixed(2)} • ${itemCount} articoli<br/>
+                                Inviato: ${new Date(activeOrder.timestamp).toLocaleTimeString('it-IT')}
+                                ${activeOrder.isModified ? `<br/><span class="font-bold">⚠️ Già modificato (v.${activeOrder.version})</span>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="text-sm text-gray-600 mb-4">
+                            Cosa vuoi fare con questo tavolo?
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <button onclick="app.modifyOrder(${tableId}); this.parentElement.parentElement.parentElement.remove();" 
+                                    class="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                <span class="text-xl">✏️</span>
+                                <div class="text-left">
+                                    <div class="font-medium">Modifica Ordine</div>
+                                    <div class="text-xs opacity-90">Aggiungi o rimuovi articoli</div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="app.closeOrderFromWaiter(${tableId}); this.parentElement.parentElement.parentElement.remove();" 
+                                    class="w-full flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                <span class="text-xl">💰</span>
+                                <div class="text-left">
+                                    <div class="font-medium">Cliente ha Pagato</div>
+                                    <div class="text-xs opacity-90">Incassa e libera tavolo</div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="this.parentElement.parentElement.parentElement.remove();" 
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                                ✕ Annulla
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+            }
+
+            async modifyOrder(tableId) {
+                console.log('✏️ Modifica ordine per tavolo:', tableId);
+                
+                // Trova l'ordine attivo
+                const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
+                if (!activeOrder) {
+                    alert('❌ Ordine non trovato!');
+                    return;
+                }
+
+                // Carica l'ordine attivo come bozza per la modifica
+                const orderAsDraft = activeOrder.items.map(item => ({
+                    ...item,
+                    // Mantieni tutte le proprietà originali incluse note e ordini liberi
+                    isFromActiveOrder: true
+                }));
+
+                // Aggiorna lo stato con l'ordine da modificare
+                const updatedOrders = {
+                    ...this.state.orders,
+                    [tableId]: orderAsDraft
+                };
+
+                this.setState({ 
+                    orders: updatedOrders,
+                    selectedTable: tableId, 
+                    currentView: 'menu' 
+                });
+
+                // Salva su Firebase
+                await firebaseService.update('orders', updatedOrders);
+
+                // Mostra messaggio informativo
+                setTimeout(() => {
+                    alert('✏️ MODALITÀ MODIFICA ATTIVATA!\n\n• L\'ordine è stato caricato come bozza\n• Aggiungi o rimuovi articoli\n• Clicca "Invia in Cucina" per aggiornare\n\n⚠️ L\'ordine precedente verrà sostituito');
+                }, 500);
+            }
+
+            async printOrder() {
+                const currentOrder = this.getCurrentOrder();
+                if (currentOrder.length === 0) {
+                    alert('Nessun articolo nell\'ordine!');
+                    return;
+                }
+
+                this.setState({ syncStatus: '🔄 Invio in cucina...' });
+                
+                try {
+                    // Controlla se stiamo modificando un ordine esistente
+                    const existingOrder = this.state.activeOrders.find(order => order.tableNumber === this.state.selectedTable);
+                    
+                    if (existingOrder) {
+                        // MODIFICA ORDINE ESISTENTE
+                        const updatedOrder = {
+                            ...existingOrder,
+                            items: [...currentOrder],
+                            total: this.calculateTotal(),
+                            timestamp: existingOrder.timestamp, // Mantieni timestamp originale
+                            modifiedAt: new Date(), // Aggiungi timestamp modifica
+                            isModified: true,
+                            version: (existingOrder.version || 1) + 1,
+                            state: 'modified'
+                        };
+
+                        // Aggiorna l'ordine esistente
+                        const updatedActiveOrders = this.state.activeOrders.map(order => 
+                            order.id === existingOrder.id ? updatedOrder : order
+                        );
+
+                        this.setState({ activeOrders: updatedActiveOrders });
+                        await firebaseService.update('activeOrders', updatedActiveOrders);
+                        
+                        alert(`✅ ORDINE AGGIORNATO!\n\n• Tavolo ${this.state.selectedTable}\n• Versione ${updatedOrder.version}\n• Totale: €${updatedOrder.total.toFixed(2)}\n\n⚠️ La cucina è stata notificata della modifica!`);
+                    } else {
+                        // NUOVO ORDINE
+                        const newOrder = {
+                            id: Date.now(),
+                            tableNumber: this.state.selectedTable,
+                            items: [...currentOrder],
+                            total: this.calculateTotal(),
+                            timestamp: new Date(),
+                            state: 'sent',
+                            isModified: false,
+                            version: 1
+                        };
+                        
+                        const updatedActiveOrders = [...this.state.activeOrders, newOrder];
+                        this.setState({ activeOrders: updatedActiveOrders });
+                        await firebaseService.update('activeOrders', updatedActiveOrders);
+                        
+                        alert('✅ ORDINE INVIATO IN CUCINA!');
+                    }
+                    
+                    // Pulisci la bozza
+                    const clearedOrders = { ...this.state.orders };
+                    delete clearedOrders[this.state.selectedTable];
+                    this.setState({ orders: clearedOrders });
+                    await firebaseService.update('orders', clearedOrders);
+                    
+                    this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
+                    this.setState({ currentView: 'tables' });
+                } catch (error) {
+                    this.setState({ syncStatus: '❌ Errore invio' });
+                    alert('❌ Errore durante l\'invio in cucina. Riprova.');
                 }
             }
         }
