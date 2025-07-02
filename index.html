@@ -1200,9 +1200,8 @@ async resetTables() {
     await firebaseService.update('activeOrders', []);
 
     alert('✅ RESET COMPLETO ESEGUITO!');
-}
-            
-            selectTable(tableId) {
+
+selectTable(tableId) {
     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
 
     if (activeOrder) {
@@ -1225,6 +1224,10 @@ async resetTables() {
         this.setState({ selectedTable: tableId, currentView: 'menu' });
     }
 }
+    
+}
+            
+            
 
 
         
