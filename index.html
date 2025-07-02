@@ -512,137 +512,186 @@
             }
 
             async loadMenuFromCSV(file = null) {
+                console.log('🚀 INIZIO loadMenuFromCSV, file:', file ? 'Caricato dall\'utente' : 'File predefinito');
+                
                 try {
                     let csvContent;
                     
                     if (file) {
-                        // File caricato dall'utente
+                        console.log('📂 Lettura file utente...');
                         csvContent = await new Promise((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onload = e => resolve(e.target.result);
                             reader.onerror = reject;
                             reader.readAsText(file, 'utf-8');
                         });
+                        console.log('✅ File utente letto, lunghezza:', csvContent.length);
                     } else {
-                        // File predefinito (prova entrambi i nomi)
+                        console.log('📄 Tentativo lettura file predefinito...');
                         try {
                             csvContent = await window.fs.readFile('Menu29Giu copia.csv', { encoding: 'utf8' });
+                            console.log('✅ Menu29Giu copia.csv letto, lunghezza:', csvContent.length);
                         } catch (error) {
+                            console.log('⚠️ Menu29Giu copia.csv non trovato, provo Menu29Giu.csv...');
                             try {
                                 csvContent = await window.fs.readFile('Menu29Giu.csv', { encoding: 'utf8' });
+                                console.log('✅ Menu29Giu.csv letto, lunghezza:', csvContent.length);
                             } catch (error2) {
+                                console.error('❌ Nessun file CSV trovato:', error2);
                                 alert('❌ File CSV non trovato. Seleziona un file CSV da caricare.');
                                 return;
                             }
                         }
                     }
                     
-                    // Parse del CSV con auto-detect del delimitatore
-                    let Papa;
-                    try {
-                        const module = await import('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js');
-                        Papa = module.default || module;
-                    } catch (error) {
-                        throw new Error('Impossibile caricare il parser CSV');
-                    }
-
-                    if (!Papa || !Papa.parse) {
-                        throw new Error('Parser CSV non disponibile');
-                    }
-
-                    // Parse del CSV con strategia robusta
-                    let parsedData;
+                    console.log('🔧 Inizio parsing CSV...');
                     
-                    // Prova diversi delimitatori manualmente se Papa non funziona
-                    const delimiters = [';', ',', '\t', '|'];
-                    let bestResult = null;
-                    let maxColumns = 0;
-
-                    for (const delimiter of delimiters) {
-                        try {
-                            let testResult;
+                    // PARSER DEFINITIVO che gestisce virgolette multi-riga
+                    function parseCSVCorrectly(content) {
+                        console.log('📊 Parser avviato, contenuto lunghezza:', content.length);
+                        
+                        const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                        const allLines = normalized.split('\n');
+                        
+                        console.log(`📄 Righe totali nel file: ${allLines.length}`);
+                        console.log(`📄 Prima riga: "${allLines[0]}"`);
+                        
+                        // Ricostruisci le righe complete gestendo le virgolette
+                        const completeLines = [];
+                        let currentRecord = '';
+                        let insideQuotes = false;
+                        
+                        for (let i = 0; i < allLines.length; i++) {
+                            const line = allLines[i];
                             
-                            if (Papa && Papa.parse) {
-                                testResult = Papa.parse(csvContent, {
-                                    header: true,
-                                    dynamicTyping: true,
-                                    skipEmptyLines: true,
-                                    delimiter: delimiter
-                                });
+                            if (currentRecord) {
+                                currentRecord += '\n' + line;
                             } else {
-                                // Fallback manuale
-                                const lines = csvContent.split('\n').filter(line => line.trim());
-                                const headers = lines[0].split(delimiter).map(h => h.trim().replace(/"/g, ''));
-                                const data = lines.slice(1).map(line => {
-                                    const values = line.split(delimiter).map(v => v.trim().replace(/"/g, ''));
-                                    const row = {};
-                                    headers.forEach((header, index) => {
-                                        row[header] = values[index] || '';
-                                        // Tenta conversione numerica per PREZZO
-                                        if (header === 'PREZZO' && values[index]) {
-                                            const num = parseFloat(values[index]);
-                                            if (!isNaN(num)) row[header] = num;
-                                        }
-                                    });
-                                    return row;
-                                });
-                                
-                                testResult = {
-                                    data: data,
-                                    meta: { fields: headers, delimiter: delimiter },
-                                    errors: []
-                                };
+                                currentRecord = line;
                             }
                             
-                            if (testResult && testResult.meta && testResult.meta.fields && 
-                                testResult.meta.fields.length > maxColumns) {
-                                maxColumns = testResult.meta.fields.length;
-                                bestResult = testResult;
+                            // Conta virgolette nella riga corrente completa
+                            const quoteCount = (currentRecord.match(/"/g) || []).length;
+                            insideQuotes = quoteCount % 2 === 1;
+                            
+                            // Se non siamo dentro virgolette e abbiamo contenuto, la riga è completa
+                            if (!insideQuotes && currentRecord.trim()) {
+                                completeLines.push(currentRecord);
+                                currentRecord = '';
                             }
-                        } catch (e) {
-                            console.log(`Delimitatore ${delimiter} fallito:`, e.message);
                         }
-                    }
-
-                    if (!bestResult) {
-                        throw new Error('Impossibile interpretare il formato CSV');
+                        
+                        // Aggiungi l'ultima riga se rimasta
+                        if (currentRecord.trim()) {
+                            completeLines.push(currentRecord);
+                        }
+                        
+                        console.log(`📋 Righe ricostruite: ${completeLines.length}`);
+                        
+                        if (completeLines.length < 2) {
+                            throw new Error('File CSV non valido - meno di 2 righe complete trovate');
+                        }
+                        
+                        // Parse header
+                        const headerLine = completeLines[0];
+                        console.log(`📋 Header line: "${headerLine}"`);
+                        
+                        const headers = headerLine.split(';').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+                        
+                        console.log(`📊 Headers trovati (${headers.length}): ${headers.join(' | ')}`);
+                        
+                        // Verifica headers
+                        const expectedHeaders = ['Item', 'CATEGORIA', 'PREZZO', 'INGREDIENTI PRINCIPALI', 'STORYTELLING'];
+                        const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
+                        if (missingHeaders.length > 0) {
+                            console.error('❌ Headers mancanti:', missingHeaders);
+                            throw new Error(`Headers mancanti nel CSV: ${missingHeaders.join(', ')}\n\nHeaders trovati: ${headers.join(', ')}\n\nHeaders attesi: ${expectedHeaders.join(', ')}`);
+                        }
+                        
+                        console.log('✅ Tutti gli headers richiesti sono presenti');
+                        
+                        // Parse dati
+                        const data = [];
+                        for (let i = 1; i < completeLines.length; i++) {
+                            const line = completeLines[i];
+                            if (!line.trim()) continue;
+                            
+                            // Split intelligente che rispetta le virgolette
+                            const fields = [];
+                            let currentField = '';
+                            let inQuotes = false;
+                            
+                            for (let j = 0; j < line.length; j++) {
+                                const char = line[j];
+                                
+                                if (char === '"') {
+                                    inQuotes = !inQuotes;
+                                } else if (char === ';' && !inQuotes) {
+                                    fields.push(currentField.trim());
+                                    currentField = '';
+                                } else {
+                                    currentField += char;
+                                }
+                            }
+                            
+                            fields.push(currentField.trim());
+                            
+                            // Crea oggetto riga
+                            const row = {};
+                            headers.forEach((header, index) => {
+                                let value = fields[index] || '';
+                                
+                                // Rimuovi virgolette esterne
+                                if (value.startsWith('"') && value.endsWith('"')) {
+                                    value = value.slice(1, -1);
+                                }
+                                
+                                // Conversione PREZZO
+                                if (header === 'PREZZO' && value) {
+                                    const num = parseFloat(value.replace(',', '.'));
+                                    if (!isNaN(num)) value = num;
+                                }
+                                
+                                row[header] = value;
+                            });
+                            
+                            data.push(row);
+                        }
+                        
+                        console.log(`✅ Parsing completato: ${data.length} righe di dati`);
+                        
+                        return {
+                            data: data,
+                            meta: { fields: headers, delimiter: ';' }
+                        };
                     }
                     
-                    parsedData = bestResult;
-
-                    console.log('📊 CSV Parser Results:', {
-                        delimiter: parsedData.meta.delimiter,
-                        fields: parsedData.meta.fields,
-                        rowCount: parsedData.data.length,
-                        errors: parsedData.errors
+                    const parsedData = parseCSVCorrectly(csvContent);
+                    
+                    console.log('✅ PARSING COMPLETATO!');
+                    console.log(`📊 Campi: ${parsedData.meta.fields.join(', ')}`);
+                    console.log(`📋 Righe dati: ${parsedData.data.length}`);
+                    
+                    // Mostra esempi primi 2 articoli
+                    parsedData.data.slice(0, 2).forEach((item, i) => {
+                        console.log(`\n📄 Articolo ${i + 1}:`);
+                        console.log(`  Nome: ${item.Item}`);
+                        console.log(`  Categoria: ${item.CATEGORIA}`);
+                        console.log(`  Prezzo: ${item.PREZZO}`);
+                        console.log(`  Ingredienti: ${item['INGREDIENTI PRINCIPALI'] ? 'SÌ' : 'NO'} (${(item['INGREDIENTI PRINCIPALI'] || '').length} char)`);
+                        console.log(`  Storytelling: ${item['STORYTELLING'] ? 'SÌ' : 'NO'} (${(item['STORYTELLING'] || '').length} char)`);
                     });
 
-                    // Verifica che ci siano i campi necessari
-                    const requiredFields = ['Item', 'CATEGORIA', 'PREZZO'];
-                    const missingFields = requiredFields.filter(field => 
-                        !parsedData.meta.fields.includes(field)
-                    );
-
-                    if (missingFields.length > 0) {
-                        throw new Error(`Campi mancanti nel CSV: ${missingFields.join(', ')}`);
-                    }
-
-                    // Filtra e raggruppa i dati
+                    // Filtra articoli validi
                     const validItems = parsedData.data.filter(item => {
-                        const isValid = item.CATEGORIA && item.Item && item.PREZZO && item.PREZZO > 0;
-                        if (!isValid) {
-                            console.log('⚠️ Articolo scartato:', {
-                                Item: item.Item || 'MANCANTE',
-                                CATEGORIA: item.CATEGORIA || 'MANCANTE',
-                                PREZZO: item.PREZZO || 'MANCANTE'
-                            });
-                        }
-                        return isValid;
+                        return item.CATEGORIA && item.Item && item.PREZZO && item.PREZZO > 0;
                     });
 
                     if (validItems.length === 0) {
-                        throw new Error('Nessun articolo valido trovato nel CSV');
+                        throw new Error('Nessun articolo valido trovato');
                     }
+
+                    console.log(`✅ Articoli validi: ${validItems.length}/${parsedData.data.length}`);
 
                     // Raggruppa per categoria
                     const itemsByCategory = {};
@@ -654,7 +703,7 @@
                         itemsByCategory[category].push(item);
                     });
 
-                    // Converte nel formato dell'app
+                    // Converte nel formato app
                     const menuData = {};
                     let globalId = 1;
 
@@ -665,23 +714,15 @@
                             price: parseFloat(item.PREZZO) || 0,
                             ingredients: item['INGREDIENTI PRINCIPALI'] || '',
                             description: item['STORYTELLING'] || '',
-                            category: item.CATEGORIA,
-                            popularity: item['POPOLARITÀ'] || '',
-                            photo: item.FOTO || '',
-                            waterFootprint: item['IMPRONTA IDRICA'] || '',
-                            carbonFootprint: item['IMPRONTA CARBONICA'] || ''
+                            category: item.CATEGORIA
                         }));
                     });
 
-                    console.log('✅ Menu convertito:', {
-                        categories: Object.keys(menuData),
-                        totalItems: globalId - 1
-                    });
+                    console.log(`🎯 Menu finale: ${Object.keys(menuData).length} categorie, ${globalId - 1} articoli`);
 
-                    // Salva il menu in Firebase
+                    // Salva su Firebase
                     await firebaseService.update('menuData', menuData);
                     
-                    // Aggiorna lo stato locale
                     this.setState({ 
                         customMenuData: menuData,
                         syncStatus: '🔥 Menu CSV caricato!'
@@ -689,12 +730,14 @@
 
                     const totalItems = globalId - 1;
                     const categories = Object.keys(menuData).length;
+                    const skipped = parsedData.data.length - validItems.length;
                     
-                    alert(`✅ MENU CSV CARICATO!\n\n📂 ${categories} categorie\n🍽️ ${totalItems} articoli\n💾 Salvato su Firebase\n\nIl nuovo menu è ora attivo!`);
+                    alert(`✅ MENU CSV CARICATO!\n\n📂 ${categories} categorie\n🍽️ ${totalItems} articoli\n⚠️ ${skipped} scartati\n\n🔥 Ingredienti e descrizioni inclusi!`);
 
                 } catch (error) {
-                    console.error('❌ Errore caricamento CSV:', error);
-                    alert(`❌ Errore nel caricamento del CSV:\n\n${error.message}\n\nVerifica che il formato sia corretto:\n- Campi richiesti: Item, CATEGORIA, PREZZO\n- Delimitatori supportati: ; , | tab`);
+                    console.error('❌ ERRORE COMPLETO:', error);
+                    console.error('❌ Stack trace:', error.stack);
+                    alert(`❌ Errore caricamento CSV:\n\n${error.message}`);
                 }
             }
 
