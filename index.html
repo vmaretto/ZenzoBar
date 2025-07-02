@@ -499,6 +499,29 @@
                 `;
             }
 
+            editTable(tableId) {
+                this.setState({ editingTable: tableId });
+            }
+            
+            async saveTableEdit(tableId, newSeats) {
+                const updatedTables = this.tables.map(table => 
+                    table.id === tableId 
+                        ? { ...table, seats: parseInt(newSeats) || 2 }
+                        : table
+                );
+                
+                this.setState({ 
+                    customTables: updatedTables,
+                    editingTable: null 
+                });
+                
+                await firebaseService.update('tables', updatedTables);
+            }
+            
+            cancelTableEdit() {
+                this.setState({ editingTable: null });
+            }
+
             resetTables() {
                 // Avvisa SEMPRE se ci sono ordini
                 const hasActiveOrders = this.state.activeOrders.length > 0;
@@ -589,6 +612,34 @@
                                     <button onclick="app.resetTables()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                                         Applica Layout
                                     </button>
+                                </div>
+
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="font-medium mb-3">Modifica Posti per Tavolo:</h4>
+                                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                        ${this.tables.map(table => `
+                                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                <span class="font-medium">Tavolo ${table.number}</span>
+                                                ${this.state.editingTable === table.id ? `
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number" min="1" max="12" value="${table.seats}" 
+                                                               id="seats-${table.id}"
+                                                               class="border rounded px-2 py-1 w-16 text-center">
+                                                        <button onclick="app.saveTableEdit(${table.id}, document.getElementById('seats-${table.id}').value)" 
+                                                                class="px-2 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">✓</button>
+                                                        <button onclick="app.cancelTableEdit()" 
+                                                                class="px-2 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">✕</button>
+                                                    </div>
+                                                ` : `
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-gray-600">👥 ${table.seats} posti</span>
+                                                        <button onclick="app.editTable(${table.id})" 
+                                                                class="px-2 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">✏️</button>
+                                                    </div>
+                                                `}
+                                            </div>
+                                        `).join('')}
+                                    </div>
                                 </div>
 
                                 <div class="border-t pt-4 mt-4">
