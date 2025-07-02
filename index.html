@@ -1082,16 +1082,6 @@
                     </div>
                 `;
             }
-            
-            selectTable(tableId) {
-                const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
-                if (activeOrder) {
-                    this.closeOrderFromWaiter(tableId);
-                } else {
-                    this.setState({ selectedTable: tableId, currentView: 'menu' });
-                }
-            }
-        }
 
 async applyTableLayout() {
     const newTables = [];
@@ -1135,6 +1125,18 @@ async resetTables() {
 
     alert('✅ RESET COMPLETO ESEGUITO!');
 }
+            
+            selectTable(tableId) {
+                const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
+                if (activeOrder) {
+                    this.closeOrderFromWaiter(tableId);
+                } else {
+                    this.setState({ selectedTable: tableId, currentView: 'menu' });
+                }
+            }
+        }
+
+
         
         // Inizializza l'app quando Firebase è pronto
         window.addEventListener('firebaseReady', () => {
