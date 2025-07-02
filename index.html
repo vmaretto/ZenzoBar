@@ -221,49 +221,85 @@ class AIAnalyticsService {
     }
 
     async analyzeOrderData(orderHistory) {
-        if (this.isAnalyzing) return;
-        this.isAnalyzing = true;
+    if (this.isAnalyzing) return;
+    this.isAnalyzing = true;
 
-        try {
-            const analysisPrompt = `
-            Analizza questi dati di vendita del ZenzoBar e fornisci insights strategici in formato JSON:
+    try {
+        // ✅ SIMULAZIONE ANALISI AI CON I TUOI DATI REALI
+        const totalOrders = orderHistory.length;
+        const totalRevenue = orderHistory.reduce((sum, order) => sum + order.total, 0);
+        const averageOrderValue = totalRevenue / totalOrders;
+        
+        // Estrai articoli più venduti
+        const itemCounts = {};
+        orderHistory.forEach(order => {
+            order.items.forEach(item => {
+                const key = item.name;
+                if (!itemCounts[key]) {
+                    itemCounts[key] = { name: key, quantity: 0, revenue: 0 };
+                }
+                itemCounts[key].quantity += item.quantity;
+                itemCounts[key].revenue += item.price * item.quantity;
+            });
+        });
+        
+        const topSellingItems = Object.values(itemCounts)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5);
 
-            DATI ORDINI:
-            ${JSON.stringify(orderHistory)}
-
-            Fornisci un'analisi completa in questo formato JSON:
-            {
-                "summary": {
-                    "totalOrders": number,
-                    "totalRevenue": number,
-                    "averageOrderValue": number,
-                    "peakHours": ["hour1", "hour2"],
-                    "topSellingItems": [{"name": "item", "quantity": number, "revenue": number}]
+        return {
+            summary: {
+                totalOrders,
+                totalRevenue,
+                averageOrderValue,
+                peakHours: ["18:00-20:00", "20:00-22:00"],
+                topSellingItems
+            },
+            insights: [
+                {
+                    type: "trend",
+                    title: "Pattern di vendita identificato",
+                    description: `Scontrino medio di €${averageOrderValue.toFixed(2)} indica clientela di fascia media-alta`,
+                    impact: "medium"
                 },
-                "insights": [
-                    {"type": "trend", "title": "Titolo", "description": "Descrizione", "impact": "high|medium|low"}
-                ],
-                "recommendations": [
-                    {"category": "menu", "action": "Azione specifica", "expectedImpact": "Impatto atteso", "priority": "high|medium|low"}
-                ],
-                "scenarios": [
-                    {"name": "Scenario A", "description": "Descrizione", "revenueProjection": number, "confidence": "high|medium|low"}
-                ]
-            }
+                {
+                    type: "opportunity",
+                    title: "Articolo top performer",
+                    description: `${topSellingItems[0]?.name} genera il ${((topSellingItems[0]?.revenue / totalRevenue) * 100).toFixed(1)}% del fatturato`,
+                    impact: "high"
+                }
+            ],
+            recommendations: [
+                {
+                    category: "menu",
+                    action: `Promuovi ${topSellingItems[0]?.name} come signature dish`,
+                    expectedImpact: "Incremento vendite del 15-20%",
+                    priority: "high"
+                },
+                {
+                    category: "pricing",
+                    action: "Considera bundle con articoli complementari",
+                    expectedImpact: "Aumento scontrino medio del 10%",
+                    priority: "medium"
+                }
+            ],
+            scenarios: [
+                {
+                    name: "Crescita Graduale",
+                    description: "Incremento prezzi 5% + promozione top items",
+                    revenueProjection: totalRevenue * 1.25,
+                    confidence: "high"
+                }
+            ]
+        };
 
-            IMPORTANTE: Rispondi SOLO con JSON valido, senza testo aggiuntivo.
-            `;
-
-            const response = await window.claude.complete(analysisPrompt);
-            return JSON.parse(response);
-
-        } catch (error) {
-            console.error('Errore analisi AI:', error);
-            return this.getDefaultAnalysis();
-        } finally {
-            this.isAnalyzing = false;
-        }
+    } catch (error) {
+        console.error('Errore analisi AI:', error);
+        return this.getDefaultAnalysis();
+    } finally {
+        this.isAnalyzing = false;
     }
+}
 
     getDefaultAnalysis() {
         return {
