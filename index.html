@@ -1122,10 +1122,10 @@
                                     <div class="flex justify-between items-center mb-3">
                                         <h2 class="text-lg font-bold text-gray-800">📋 Menu</h2>
                                         <div class="flex gap-2">
-                                            <button onclick="app.expandAllCategories()" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            <button onclick="if(window.app) { app.expandAllCategories(); } else { console.error('App non disponibile'); }" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
                                                 📂 Espandi Tutto
                                             </button>
-                                            <button onclick="app.collapseAllCategories()" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                            <button onclick="if(window.app) { app.collapseAllCategories(); } else { console.error('App non disponibile'); }" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
                                                 📁 Chiudi Tutto
                                             </button>
                                         </div>
