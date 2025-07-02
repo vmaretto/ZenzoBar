@@ -1197,9 +1197,10 @@ async resetTables() {
 
     await firebaseService.update('tables', newTables);
     await firebaseService.update('orders', {});
-    await firebaseService.update('activeOrders', []);
+    await firebaseService.update('activeOrders', {});
 
     alert('✅ RESET COMPLETO ESEGUITO!');
+} // ✅ questa parentesi mancava qui!
 
 selectTable(tableId) {
     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
