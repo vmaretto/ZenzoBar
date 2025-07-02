@@ -165,29 +165,48 @@
         
         window.toggleCatByIndex = function(categoryIndex) {
             console.log('🔄 Toggle categoria per indice:', categoryIndex);
+            console.log('🔍 window.app esiste?', !!window.app);
+            console.log('🔍 window.app.menuCategories esiste?', !!(window.app && window.app.menuCategories));
+            
             if (window.app && window.app.menuCategories) {
                 const categories = Object.keys(window.app.menuCategories);
+                console.log('📂 Tutte le categorie:', categories);
+                console.log('📂 Indice richiesto:', categoryIndex);
+                
                 const category = categories[categoryIndex];
                 console.log('📂 Categoria trovata:', category);
+                
                 if (category && window.app.toggleCategory) {
+                    console.log('✅ Chiamando toggleCategory per:', category);
                     window.app.toggleCategory(category);
                 } else {
                     console.error('❌ Categoria non trovata per indice:', categoryIndex);
+                    console.error('❌ toggleCategory esiste?', !!(window.app && window.app.toggleCategory));
                 }
             } else {
                 console.error('❌ App o menuCategories non disponibile');
+                console.error('❌ window.app:', window.app);
+                console.error('❌ menuCategories:', window.app ? window.app.menuCategories : 'N/A');
             }
         };
         
         window.expandAll = function() {
+            console.log('📂 Espandi tutto chiamata');
             if (window.app && window.app.expandAllCategories) {
+                console.log('✅ Chiamando expandAllCategories');
                 window.app.expandAllCategories();
+            } else {
+                console.error('❌ expandAllCategories non disponibile');
             }
         };
         
         window.collapseAll = function() {
+            console.log('📁 Chiudi tutto chiamata');
             if (window.app && window.app.collapseAllCategories) {
+                console.log('✅ Chiamando collapseAllCategories');
                 window.app.collapseAllCategories();
+            } else {
+                console.error('❌ collapseAllCategories non disponibile');
             }
         };
         
@@ -268,10 +287,16 @@
                 this.render();
             }
             
-            // ✅ METODO RENDER AGGIUNTO - QUESTO ERA IL PROBLEMA PRINCIPALE!
+            // ✅ METODO RENDER - FONDAMENTALE PER AGGIORNARE IL DOM
             render() {
+                console.log('🎨 render() chiamata, vista corrente:', this.state.currentView);
+                console.log('🎨 expandedCategories nel render:', this.state.expandedCategories);
+                
                 const appElement = document.getElementById('app');
-                if (!appElement) return;
+                if (!appElement) {
+                    console.error('❌ Elemento #app non trovato!');
+                    return;
+                }
                 
                 let content = '';
                 
@@ -293,6 +318,7 @@
                 }
                 
                 appElement.innerHTML = content;
+                console.log('✅ render() completata, DOM aggiornato');
             }
             
             // Menu categories - usa CSV se disponibile, altrimenti menu di default
@@ -434,14 +460,23 @@
                 }
             }
             
+            // ✅ METODO CORRETTO PER TOGGLE CATEGORIA
             toggleCategory(category) {
-                console.log('🔄 Toggle categoria:', category);
+                console.log('🔄 toggleCategory chiamata per:', category);
+                console.log('📊 Stato corrente expandedCategories:', this.state.expandedCategories);
+                console.log('📊 Categoria attualmente espansa?', this.state.expandedCategories[category]);
+                
                 const newExpandedCategories = {
                     ...this.state.expandedCategories,
                     [category]: !this.state.expandedCategories[category]
                 };
-                console.log('📂 Nuove categorie espanse:', newExpandedCategories);
+                
+                console.log('📊 Nuovo stato expandedCategories:', newExpandedCategories);
+                console.log('📊 Categoria sarà espansa?', newExpandedCategories[category]);
+                
+                // ✅ CHIAMA setState CHE ATTIVA AUTOMATICAMENTE render()
                 this.setState({ expandedCategories: newExpandedCategories });
+                console.log('✅ setState chiamata con nuove expandedCategories');
             }
 
             expandAllCategories() {
@@ -1182,7 +1217,7 @@
                                         return `
                                             <div class="border border-gray-200 rounded-lg overflow-hidden">
                                                 <!-- Header categoria cliccabile -->
-                                                <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}')}" 
+                                                <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}'))" 
                                                      class="flex justify-between items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 cursor-pointer hover:from-blue-50 hover:to-blue-100 transition-all border-b ${isExpanded ? 'border-gray-300' : ''}">
                                                     <div class="flex items-center gap-3">
                                                         <span class="text-lg transition-transform ${isExpanded ? 'rotate-90' : ''}">
