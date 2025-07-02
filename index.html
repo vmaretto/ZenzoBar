@@ -252,12 +252,21 @@
                 try {
                     const unsubscribeOrders = firebaseService.onSnapshot('orders', (data) => {
                         console.log('📨 Ricevuti orders:', data);
-                        this.setState({ orders: data || {}, syncStatus: '🔥 Sincronizzato Firebase' });
+                        // ✅ IMPORTANTE: Non sovrascrivere expandedCategories!
+                        this.setState({ 
+                            orders: data || {}, 
+                            syncStatus: '🔥 Sincronizzato Firebase'
+                            // NON includere expandedCategories qui
+                        });
                     });
 
                     const unsubscribeActive = firebaseService.onSnapshot('activeOrders', (data) => {
                         console.log('📨 Ricevuti activeOrders:', data);
-                        this.setState({ activeOrders: Array.isArray(data) ? data : [] });
+                        // ✅ IMPORTANTE: Preserva expandedCategories
+                        this.setState({ 
+                            activeOrders: Array.isArray(data) ? data : []
+                            // NON sovrascrivere altri stati
+                        });
                     });
 
                     const unsubscribeHistory = firebaseService.onSnapshot('orderHistory', (data) => {
@@ -276,6 +285,10 @@
                         console.log('📨 Ricevuti menuData:', data);
                         this.setState({ customMenuData: data });
                     });
+                    
+                    // ✅ NON sincronizzare expandedCategories con Firebase
+                    // Mantieni solo in memoria locale per performance
+                    
                 } catch (error) {
                     console.error('Errore setup Firebase listeners:', error);
                     this.setState({ syncStatus: '❌ Errore connessione' });
@@ -283,7 +296,18 @@
             }
             
             setState(newState) {
+                console.log('🔄 setState chiamata', Object.keys(newState));
+                
+                // ✅ PROTEZIONE: Preserva sempre expandedCategories se non specificato
+                const oldExpandedCategories = this.state.expandedCategories;
                 this.state = { ...this.state, ...newState };
+                
+                // ✅ Se expandedCategories non era nel newState, ripristinalo
+                if (!newState.hasOwnProperty('expandedCategories')) {
+                    this.state.expandedCategories = oldExpandedCategories;
+                }
+                
+                console.log('📊 Stato expandedCategories preservato:', this.state.expandedCategories);
                 this.render();
             }
             
@@ -460,36 +484,59 @@
                 }
             }
             
-            // ✅ METODO CORRETTO PER TOGGLE CATEGORIA
+            // ✅ METODO TOGGLE CATEGORIA - VERSIONE ROBUSTA 
             toggleCategory(category) {
-                console.log('🔄 toggleCategory chiamata per:', category);
-                console.log('📊 Stato corrente expandedCategories:', this.state.expandedCategories);
+                console.log('🔄 ===== TOGGLE CATEGORIA =====');
+                console.log('📂 Categoria:', category);
+                console.log('📊 Stato attuale expandedCategories:', this.state.expandedCategories);
                 console.log('📊 Categoria attualmente espansa?', this.state.expandedCategories[category]);
                 
+                const currentExpanded = this.state.expandedCategories[category] || false;
+                const newExpanded = !currentExpanded;
+                
+                console.log('🔄 Cambio stato:', currentExpanded, '→', newExpanded);
+                
+                // ✅ AGGIORNAMENTO ESPLICITO - Solo expandedCategories
                 const newExpandedCategories = {
                     ...this.state.expandedCategories,
-                    [category]: !this.state.expandedCategories[category]
+                    [category]: newExpanded
                 };
                 
-                console.log('📊 Nuovo stato expandedCategories:', newExpandedCategories);
-                console.log('📊 Categoria sarà espansa?', newExpandedCategories[category]);
+                console.log('📊 Nuovo stato completo expandedCategories:', newExpandedCategories);
                 
-                // ✅ CHIAMA setState CHE ATTIVA AUTOMATICAMENTE render()
+                // ✅ setState con SOLO expandedCategories per evitare conflitti
                 this.setState({ expandedCategories: newExpandedCategories });
-                console.log('✅ setState chiamata con nuove expandedCategories');
+                
+                console.log('✅ ===== TOGGLE COMPLETATO =====');
             }
 
             expandAllCategories() {
+                console.log('📂 ===== ESPANDI TUTTO =====');
                 const allCategories = Object.keys(this.menuCategories);
+                console.log('📂 Categorie trovate:', allCategories);
+                
                 const newExpandedCategories = {};
                 allCategories.forEach(category => {
                     newExpandedCategories[category] = true;
                 });
+                
+                console.log('📂 Nuovo stato (tutto espanso):', newExpandedCategories);
+                
+                // ✅ Aggiorna SOLO expandedCategories
                 this.setState({ expandedCategories: newExpandedCategories });
+                
+                console.log('✅ ===== ESPANDI TUTTO COMPLETATO =====');
             }
 
             collapseAllCategories() {
+                console.log('📁 ===== CHIUDI TUTTO =====');
+                console.log('📁 Stato precedente:', this.state.expandedCategories);
+                
+                // ✅ Reset completo delle categorie
                 this.setState({ expandedCategories: {} });
+                
+                console.log('📁 Nuovo stato: {}');
+                console.log('✅ ===== CHIUDI TUTTO COMPLETATO =====');
             }
 
             closeOrderFromKitchen(orderId) {
