@@ -473,48 +473,42 @@
 }
 
             resetTables() {
-    // Avvisa se ci sono ordini attivi
+    // Avvisa SEMPRE se ci sono ordini
     const hasActiveOrders = this.state.activeOrders.length > 0;
     const hasDraftOrders = Object.keys(this.state.orders).length > 0;
     
     if (hasActiveOrders || hasDraftOrders) {
-        const confirmMsg = `⚠️ ATTENZIONE!\n\nCi sono ordini aperti o in cucina.\nCambiando il layout potresti perdere questi ordini.\n\nVuoi continuare comunque?`;
+        const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
+        const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
         
         if (!window.confirm(confirmMsg)) {
-            return; // Annulla l'operazione
+            return;
         }
     }
     
-    // Reset completo: tavoli, ordini e configurazione
-    this.setState({ 
-        customTables: [], 
-        editingTable: null, 
-        showSettings: false,
-        orders: {},           // Cancella tutti gli ordini in bozza
-        // Non tocchiamo activeOrders e orderHistory per sicurezza
-    });
-    
-    // Aggiorna Firebase
-    firebaseService.update('tables', []);
-    firebaseService.update('orders', {});
-    
-    alert(`✅ Layout tavoli aggiornato!\n\nNuovo numero tavoli: ${this.state.tableCount}`);
-}
-            
-            render() {
-    const app = document.getElementById('app');
-    
-    if (this.state.currentView === 'tables') {
-        app.innerHTML = this.renderTableView();
-    } else if (this.state.currentView === 'menu') {
-        app.innerHTML = this.renderMenuView();
-    } else if (this.state.currentView === 'kitchen') {
-        app.innerHTML = this.renderKitchenView();
-    } else if (this.state.currentView === 'history') {
-        app.innerHTML = this.renderHistoryView();
+    // Genera il nuovo layout di tavoli
+    const newTables = [];
+    for (let i = 0; i < this.state.tableCount; i++) {
+        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+        newTables.push({ id: i + 1, number: i + 1, seats: seats });
     }
     
-    this.attachEventListeners();
+    // RESET TOTALE - cancella TUTTI gli ordini
+    this.setState({ 
+        customTables: newTables,
+        editingTable: null, 
+        showSettings: false,
+        orders: {},           // Ordini in bozza
+        activeOrders: []      // Ordini in cucina - CANCELLATI!
+        // orderHistory rimane per non perdere lo storico
+    });
+    
+    // Aggiorna Firebase - CANCELLA TUTTO
+    firebaseService.update('tables', newTables);
+    firebaseService.update('orders', {});
+    firebaseService.update('activeOrders', []); // Cancella anche dalla cucina
+    
+    alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutti gli ordini cancellati\n• Layout applicato`);
 }
             
             renderTableView() {
