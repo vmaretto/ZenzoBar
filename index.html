@@ -522,6 +522,51 @@
                 this.setState({ editingTable: null });
             }
 
+            async applyTableLayout() {
+                // Avvisa se ci sono ordini
+                const hasActiveOrders = this.state.activeOrders.length > 0;
+                const hasDraftOrders = Object.keys(this.state.orders).length > 0;
+                
+                if (hasActiveOrders || hasDraftOrders) {
+                    const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
+                    const confirmMsg = `⚠️ APPLICAZIONE LAYOUT!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI.\n\nVuoi continuare?`;
+                    
+                    if (!window.confirm(confirmMsg)) {
+                        return;
+                    }
+                }
+                
+                // Conserva le personalizzazioni esistenti o crea nuovi tavoli
+                const currentTables = [...this.tables];
+                const newTables = [];
+                
+                for (let i = 0; i < this.state.tableCount; i++) {
+                    const existingTable = currentTables.find(t => t.number === i + 1);
+                    if (existingTable) {
+                        // Mantieni il tavolo esistente con i suoi posti personalizzati
+                        newTables.push({ ...existingTable, id: i + 1 });
+                    } else {
+                        // Crea nuovo tavolo con posti di default
+                        const defaultSeats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
+                        newTables.push({ id: i + 1, number: i + 1, seats: defaultSeats });
+                    }
+                }
+                
+                this.setState({ 
+                    customTables: newTables,
+                    editingTable: null,
+                    orders: {},           // Cancella ordini in bozza
+                    activeOrders: []      // Cancella ordini in cucina
+                });
+                
+                // Aggiorna Firebase
+                await firebaseService.update('tables', newTables);
+                await firebaseService.update('orders', {});
+                await firebaseService.update('activeOrders', []);
+                
+                alert(`✅ LAYOUT APPLICATO!\n\n• Tavoli: ${this.state.tableCount}\n• Personalizzazioni mantenute\n• Ordini cancellati`);
+            }
+
             resetTables() {
                 // Avvisa SEMPRE se ci sono ordini
                 const hasActiveOrders = this.state.activeOrders.length > 0;
@@ -529,36 +574,33 @@
                 
                 if (hasActiveOrders || hasDraftOrders) {
                     const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
-                    const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
+                    const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n- TUTTE le personalizzazioni dei tavoli\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
                     
                     if (!window.confirm(confirmMsg)) {
                         return;
                     }
                 }
                 
-                // Genera il nuovo layout di tavoli
+                // RESET COMPLETO - rigenera tutto da zero
                 const newTables = [];
                 for (let i = 0; i < this.state.tableCount; i++) {
                     const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
                     newTables.push({ id: i + 1, number: i + 1, seats: seats });
                 }
                 
-                // RESET TOTALE - cancella TUTTI gli ordini
                 this.setState({ 
                     customTables: newTables,
                     editingTable: null, 
                     showSettings: false,
-                    orders: {},           // Ordini in bozza
-                    activeOrders: []      // Ordini in cucina - CANCELLATI!
-                    // orderHistory rimane per non perdere lo storico
+                    orders: {},           
+                    activeOrders: []      
                 });
                 
-                // Aggiorna Firebase - CANCELLA TUTTO
                 firebaseService.update('tables', newTables);
                 firebaseService.update('orders', {});
-                firebaseService.update('activeOrders', []); // Cancella anche dalla cucina
+                firebaseService.update('activeOrders', []);
                 
-                alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutti gli ordini cancellati\n• Layout applicato`);
+                alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutte le personalizzazioni cancellate\n• Tutti gli ordini cancellati`);
             }
             
             renderTableView() {
@@ -609,9 +651,22 @@
                                     <input type="number" min="1" max="20" value="${this.state.tableCount}" 
                                            onchange="app.setState({tableCount: parseInt(this.value) || 1})"
                                            class="border rounded px-3 py-2 w-20">
-                                    <button onclick="app.resetTables()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                                        Applica Layout
+                                    <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                        📐 Applica Layout
                                     </button>
+                                    <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                        🔄 Reset Completo
+                                    </button>
+                                </div>
+                                
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">⚠️</div>
+                                        <div class="ml-3 text-sm">
+                                            <p><strong>📐 Applica Layout:</strong> Mantiene le personalizzazioni dei posti, cancella solo gli ordini</p>
+                                            <p><strong>🔄 Reset Completo:</strong> Cancella TUTTO (ordini + personalizzazioni) e ricrea i tavoli da zero</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="border-t pt-4 mt-4">
