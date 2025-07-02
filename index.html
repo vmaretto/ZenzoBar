@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>ZenzoBar Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <!-- Firebase v9 SDK -->
     <script type="module">
@@ -92,6 +93,22 @@
                 </button>
             </div>
         </div>
+
+        <div id="aiAnalyticsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-full max-w-6xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-purple-800">🤖 AI Analytics Dashboard</h3>
+            <button onclick="app.closeAIModal()" class="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
+        </div>
+        <div id="aiAnalyticsContent">
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Claude sta analizzando i tuoi dati...</p>
+            </div>
+        </div>
+    </div>
+</div>
+        
     </div>
     
     <script>
@@ -195,6 +212,89 @@
         }
         
         const firebaseService = new FirebaseService();
+
+// AI Analytics Service
+class AIAnalyticsService {
+    constructor() {
+        this.isAnalyzing = false;
+    }
+
+    async analyzeOrderData(orderHistory) {
+        if (this.isAnalyzing) return;
+        this.isAnalyzing = true;
+
+        try {
+            const analysisPrompt = `
+            Analizza questi dati di vendita del ZenzoBar e fornisci insights strategici in formato JSON:
+
+            DATI ORDINI:
+            ${JSON.stringify(orderHistory)}
+
+            Fornisci un'analisi completa in questo formato JSON:
+            {
+                "summary": {
+                    "totalOrders": number,
+                    "totalRevenue": number,
+                    "averageOrderValue": number,
+                    "peakHours": ["hour1", "hour2"],
+                    "topSellingItems": [{"name": "item", "quantity": number, "revenue": number}]
+                },
+                "insights": [
+                    {"type": "trend", "title": "Titolo", "description": "Descrizione", "impact": "high|medium|low"}
+                ],
+                "recommendations": [
+                    {"category": "menu", "action": "Azione specifica", "expectedImpact": "Impatto atteso", "priority": "high|medium|low"}
+                ],
+                "scenarios": [
+                    {"name": "Scenario A", "description": "Descrizione", "revenueProjection": number, "confidence": "high|medium|low"}
+                ]
+            }
+
+            IMPORTANTE: Rispondi SOLO con JSON valido, senza testo aggiuntivo.
+            `;
+
+            const response = await window.claude.complete(analysisPrompt);
+            return JSON.parse(response);
+
+        } catch (error) {
+            console.error('Errore analisi AI:', error);
+            return this.getDefaultAnalysis();
+        } finally {
+            this.isAnalyzing = false;
+        }
+    }
+
+    getDefaultAnalysis() {
+        return {
+            summary: {
+                totalOrders: 0,
+                totalRevenue: 0,
+                averageOrderValue: 0,
+                peakHours: [],
+                topSellingItems: []
+            },
+            insights: [
+                {
+                    type: "info",
+                    title: "Dati insufficienti",
+                    description: "Servono più ordini per generare insights significativi",
+                    impact: "low"
+                }
+            ],
+            recommendations: [
+                {
+                    category: "data",
+                    action: "Raccogliere più dati di vendita",
+                    expectedImpact: "Migliori insights AI",
+                    priority: "high"
+                }
+            ],
+            scenarios: []
+        };
+    }
+}
+
+const aiService = new AIAnalyticsService();
         
         // ZenzoBar App
         class ZenzoBarApp {
@@ -214,7 +314,9 @@
                     customMenuData: null,
                     expandedCategories: {},
                     currentNoteItem: null,
-                    currentNoteIndex: null
+                    currentNoteIndex: null,
+                    aiAnalysis: null,
+                    showAIModal: false
                 };
                 
                 this.init();
@@ -468,6 +570,91 @@
                 await this.addToOrder(freeItem, note);
                 this.cancelFreeOrder();
             }
+
+// Metodi AI
+async showAIAnalytics() {
+    this.setState({ showAIModal: true });
+    
+    const modal = document.getElementById('aiAnalyticsModal');
+    modal.classList.remove('hidden');
+    
+    // Analizza i dati
+    const analysis = await aiService.analyzeOrderData(this.state.orderHistory);
+    
+    this.setState({ aiAnalysis: analysis });
+    this.renderAIAnalytics();
+}
+
+closeAIModal() {
+    document.getElementById('aiAnalyticsModal').classList.add('hidden');
+    this.setState({ showAIModal: false });
+}
+
+renderAIAnalytics() {
+    const content = document.getElementById('aiAnalyticsContent');
+    if (!this.state.aiAnalysis) return;
+
+    const { summary, insights, recommendations } = this.state.aiAnalysis;
+
+    content.innerHTML = `
+        <div class="space-y-6">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div class="text-2xl font-bold text-blue-800">${summary.totalOrders}</div>
+                    <div class="text-sm text-blue-600">Ordini Totali</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div class="text-2xl font-bold text-green-800">€${summary.totalRevenue.toFixed(2)}</div>
+                    <div class="text-sm text-green-600">Fatturato Totale</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div class="text-2xl font-bold text-purple-800">€${summary.averageOrderValue.toFixed(2)}</div>
+                    <div class="text-sm text-purple-600">Scontrino Medio</div>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <div class="text-2xl font-bold text-orange-800">${summary.topSellingItems.length}</div>
+                    <div class="text-sm text-orange-600">Top Items</div>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <div class="bg-white p-6 rounded-lg border">
+                <h4 class="text-lg font-bold mb-4">🔍 Insights AI</h4>
+                <div class="grid gap-4">
+                    ${insights.map(insight => `
+                        <div class="border-l-4 ${insight.impact === 'high' ? 'border-red-500 bg-red-50' : insight.impact === 'medium' ? 'border-yellow-500 bg-yellow-50' : 'border-blue-500 bg-blue-50'} p-4 rounded">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h5 class="font-semibold ${insight.impact === 'high' ? 'text-red-800' : insight.impact === 'medium' ? 'text-yellow-800' : 'text-blue-800'}">${insight.title}</h5>
+                                    <p class="text-sm text-gray-700 mt-1">${insight.description}</p>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded ${insight.impact === 'high' ? 'bg-red-200 text-red-800' : insight.impact === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-blue-200 text-blue-800'}">${insight.impact.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="bg-white p-6 rounded-lg border">
+                <h4 class="text-lg font-bold mb-4">💡 Raccomandazioni AI</h4>
+                <div class="grid gap-4">
+                    ${recommendations.map(rec => `
+                        <div class="border rounded-lg p-4 ${rec.priority === 'high' ? 'border-red-200 bg-red-50' : rec.priority === 'medium' ? 'border-yellow-200 bg-yellow-50' : 'border-green-200 bg-green-50'}">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-medium px-2 py-1 rounded ${rec.priority === 'high' ? 'bg-red-200 text-red-800' : rec.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}">${rec.category.toUpperCase()}</span>
+                                <span class="text-xs font-medium px-2 py-1 rounded ${rec.priority === 'high' ? 'bg-red-600 text-white' : rec.priority === 'medium' ? 'bg-yellow-600 text-white' : 'bg-green-600 text-white'}">PRIORITÀ ${rec.priority.toUpperCase()}</span>
+                            </div>
+                            <div class="font-semibold text-gray-800">${rec.action}</div>
+                            <div class="text-sm text-gray-600 mt-1">${rec.expectedImpact}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
             
             async addToOrder(item, note = '') {
                 const currentOrder = this.getCurrentOrder();
@@ -823,6 +1010,13 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                         : ''
                                     }
                                 </button>
+                                <button onclick="app.showAIAnalytics()" class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+    🤖 AI Analytics
+    ${this.state.orderHistory.length > 0 ? 
+        `<span class="bg-yellow-400 text-purple-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
+        : ''
+    }
+</button>
                                 <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ⚙️ Configura
                                 </button>
