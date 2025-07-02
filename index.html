@@ -674,26 +674,65 @@
                 
                 alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
             }
+
+exportOrderHistoryCSV() {
+    const headers = ['Data Ordine', 'Data Chiusura', 'Tavolo', 'Totale (€)', 'Articoli', 'Chiusa da'];
+    
+    const rows = this.state.orderHistory.map(order => {
+        const orderedAt = new Date(order.timestamp).toLocaleString('it-IT');
+        const closedAt = new Date(order.closedAt).toLocaleString('it-IT');
+        const items = order.items.map(i => `${i.quantity}x ${i.name}${i.note ? ` (Nota: ${i.note})` : ''}`).join(' | ');
+        const closedBy = order.closedBy === 'kitchen' ? 'Cucina' : 'Cameriere';
+
+        return [orderedAt, closedAt, order.tableNumber, order.total.toFixed(2), items, closedBy];
+    });
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(col => `"${String(col).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `storico_ordini_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+}
             
             renderHistoryView() {
-                return `
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
-                            <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                                ✕ Chiudi
-                            </button>
-                        </div>
-                        
-                        ${this.state.orderHistory.length === 0 ? `
-                            <div class="text-center text-gray-500 mt-12">
-                                <div class="text-6xl mb-4">🕐</div>
-                                <p>Nessun ordine chiuso oggi</p>
-                                <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
-                            </div>
-                        ` : `
+    const groupedByDate = this.state.orderHistory.reduce((acc, order) => {
+        const dateKey = new Date(order.timestamp).toLocaleDateString('it-IT');
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(order);
+        return acc;
+    }, {});
+
+    return `
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
+                <div class="flex gap-3">
+                    <button onclick="app.exportOrderHistoryCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                        📤 Esporta in CSV
+                    </button>
+                    <button onclick="app.setState({currentView: 'tables'})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                        ✕ Chiudi
+                    </button>
+                </div>
+            </div>
+
+            ${this.state.orderHistory.length === 0 ? `
+                <div class="text-center text-gray-500 mt-12">
+                    <div class="text-6xl mb-4">🕐</div>
+                    <p>Nessun ordine chiuso oggi</p>
+                    <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
+                </div>
+            ` : `
+                <div class="space-y-8">
+                    ${Object.entries(groupedByDate).map(([date, orders]) => `
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-700 mb-4">${date}</h2>
                             <div class="space-y-4">
-                                ${this.state.orderHistory.map(order => `
+                                ${orders.map(order => `
                                     <div class="bg-white rounded-lg shadow p-4 border">
                                         <div class="flex justify-between items-start mb-3">
                                             <div>
@@ -710,7 +749,7 @@
                                                 <div class="text-xs text-green-600 font-medium mt-1">💰 PAGATO</div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="border-t pt-3">
                                             ${order.items.map(item => `
                                                 <div class="flex justify-between text-sm mb-1">
@@ -722,10 +761,13 @@
                                     </div>
                                 `).join('')}
                             </div>
-                        `}
-                    </div>
-                `;
-            }
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+        </div>
+    `;
+}
 
             renderTableView() {
                 return `
