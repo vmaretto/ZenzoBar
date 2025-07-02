@@ -1237,7 +1237,7 @@
                                                 ${isExpanded ? `
                                                     <div class="bg-white">
                                                         ${items.map(item => `
-                                                            <div onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" 
+                                                            <div onclick="app.addToOrder(JSON.parse(this.dataset.item))" data-item="${JSON.stringify({id:item.id,name:item.name,price:item.price,ingredients:item.ingredients||'',description:item.description||''}).replace(/"/g, '&quot;')}"
                                                                  class="flex justify-between items-start p-4 hover:bg-blue-50 hover:border-l-4 hover:border-blue-500 cursor-pointer transition-all border-b border-gray-100 last:border-b-0">
                                                                 <div class="flex-1">
                                                                     <div class="font-medium text-gray-900">${item.name}</div>
@@ -1296,7 +1296,7 @@
                                                 <div class="flex items-center gap-3">
                                                     <button onclick="app.removeFromOrder(${item.id})" class="w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full text-red-600 transition-colors">−</button>
                                                     <span class="font-bold w-8 text-center">${item.quantity}</span>
-                                                    <button onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600 transition-colors">+</button>
+                                                    <button onclick="app.addToOrder(JSON.parse(this.dataset.item))" data-item="${JSON.stringify({id:item.id,name:item.name,price:item.price,ingredients:item.ingredients||'',description:item.description||''}).replace(/"/g, '&quot;')}" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600 transition-colors">+</button>
                                                     <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
                                                 </div>
                                             </div>
