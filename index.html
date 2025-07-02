@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenzoBar Orders</title>
+    <title>ZenzoBar Orders - Debug</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Firebase v9 SDK -->
@@ -48,7 +48,33 @@
         </div>
     </div>
     
+    <!-- DEBUG PANEL -->
+    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; max-width: 300px; z-index: 9999; display: none;">
+        <div style="font-weight: bold; margin-bottom: 5px;">🐛 DEBUG PANEL</div>
+        <div id="debug-content"></div>
+        <button onclick="document.getElementById('debug-panel').style.display='none'" style="background: red; color: white; border: none; padding: 2px 5px; border-radius: 3px; margin-top: 5px;">Chiudi</button>
+    </div>
+    
     <script>
+        // DEBUG UTILITIES
+        function showDebug(message) {
+            const panel = document.getElementById('debug-panel');
+            const content = document.getElementById('debug-content');
+            content.innerHTML = message;
+            panel.style.display = 'block';
+        }
+        
+        function logDebug(message, data = null) {
+            console.log(`🐛 DEBUG: ${message}`, data || '');
+            
+            // Mostra anche nel pannello di debug
+            const timestamp = new Date().toLocaleTimeString();
+            const debugMsg = `[${timestamp}] ${message}${data ? `<br/>Data: ${JSON.stringify(data)}` : ''}`;
+            
+            const existing = document.getElementById('debug-content').innerHTML;
+            document.getElementById('debug-content').innerHTML = debugMsg + '<br/><br/>' + existing;
+        }
+        
         // Firebase Service
         class FirebaseService {
             constructor() {
@@ -69,7 +95,7 @@
             initializeFirebase() {
                 this.db = window.firebaseDb;
                 this.isInitialized = true;
-                console.log('🔥 FirebaseService pronto!');
+                logDebug('🔥 FirebaseService pronto!');
                 
                 // Notifica i listeners che Firebase è pronto
                 this.listeners.forEach(listener => {
@@ -84,16 +110,16 @@
                     const docRef = window.firebaseDoc(this.db, 'zenzobar', listener.path);
                     
                     const unsubscribe = window.firebaseOnSnapshot(docRef, (docSnap) => {
-                        console.log(`🔥 Firebase update per ${listener.path}`);
+                        logDebug(`🔥 Firebase update per ${listener.path}`);
                         const data = docSnap.exists() ? docSnap.data().value : this.getDefaultValue(listener.path);
                         listener.callback(data);
                     }, (error) => {
-                        console.error(`❌ Errore listener Firebase per ${listener.path}:`, error);
+                        logDebug(`❌ Errore listener Firebase per ${listener.path}`, error);
                     });
                     
                     listener.unsubscribe = unsubscribe;
                 } catch (error) {
-                    console.error('Errore setup listener Firebase:', error);
+                    logDebug('Errore setup listener Firebase', error);
                 }
             }
             
@@ -131,18 +157,18 @@
             }
             
             async update(path, newData) {
-                console.log(`🔄 Aggiornamento: ${path}`, newData);
+                logDebug(`🔄 Aggiornamento: ${path}`, newData);
                 
                 if (this.isInitialized && this.db) {
                     try {
                         const docRef = window.firebaseDoc(this.db, 'zenzobar', path);
                         await window.firebaseSetDoc(docRef, { value: newData, timestamp: new Date() });
-                        console.log(`🔥 Firebase aggiornato: ${path}`);
+                        logDebug(`🔥 Firebase aggiornato: ${path}`);
                     } catch (error) {
-                        console.error(`❌ Errore aggiornamento Firebase per ${path}:`, error);
+                        logDebug(`❌ Errore aggiornamento Firebase per ${path}`, error);
                     }
                 } else {
-                    console.log('Firebase non ancora pronto, aggiornamento in coda...');
+                    logDebug('Firebase non ancora pronto, aggiornamento in coda...');
                 }
             }
             
@@ -153,66 +179,11 @@
         
         const firebaseService = new FirebaseService();
         
-        // Funzioni globali per evitare problemi di sintassi
-        window.toggleCat = function(category) {
-            console.log('🔄 Toggle categoria globale:', category);
-            if (window.app && window.app.toggleCategory) {
-                window.app.toggleCategory(category);
-            } else {
-                console.error('❌ App non disponibile');
-            }
-        };
-        
-        window.toggleCatByIndex = function(categoryIndex) {
-            console.log('🔄 Toggle categoria per indice:', categoryIndex);
-            console.log('🔍 window.app esiste?', !!window.app);
-            console.log('🔍 window.app.menuCategories esiste?', !!(window.app && window.app.menuCategories));
-            
-            if (window.app && window.app.menuCategories) {
-                const categories = Object.keys(window.app.menuCategories);
-                console.log('📂 Tutte le categorie:', categories);
-                console.log('📂 Indice richiesto:', categoryIndex);
-                
-                const category = categories[categoryIndex];
-                console.log('📂 Categoria trovata:', category);
-                
-                if (category && window.app.toggleCategory) {
-                    console.log('✅ Chiamando toggleCategory per:', category);
-                    window.app.toggleCategory(category);
-                } else {
-                    console.error('❌ Categoria non trovata per indice:', categoryIndex);
-                    console.error('❌ toggleCategory esiste?', !!(window.app && window.app.toggleCategory));
-                }
-            } else {
-                console.error('❌ App o menuCategories non disponibile');
-                console.error('❌ window.app:', window.app);
-                console.error('❌ menuCategories:', window.app ? window.app.menuCategories : 'N/A');
-            }
-        };
-        
-        window.expandAll = function() {
-            console.log('📂 Espandi tutto chiamata');
-            if (window.app && window.app.expandAllCategories) {
-                console.log('✅ Chiamando expandAllCategories');
-                window.app.expandAllCategories();
-            } else {
-                console.error('❌ expandAllCategories non disponibile');
-            }
-        };
-        
-        window.collapseAll = function() {
-            console.log('📁 Chiudi tutto chiamata');
-            if (window.app && window.app.collapseAllCategories) {
-                console.log('✅ Chiamando collapseAllCategories');
-                window.app.collapseAllCategories();
-            } else {
-                console.error('❌ collapseAllCategories non disponibile');
-            }
-        };
-        
         // ZenzoBar App
         class ZenzoBarApp {
             constructor() {
+                logDebug('🚀 Inizializzazione ZenzoBarApp');
+                
                 this.state = {
                     currentView: 'tables',
                     selectedTable: null,
@@ -225,14 +196,17 @@
                     editingTable: null,
                     isOnline: true,
                     syncStatus: 'Inizializzazione...',
-                    customMenuData: null, // Menu caricato da CSV
-                    expandedCategories: {} // Categorie espanse nel menu
+                    customMenuData: null,
+                    expandedCategories: {} // ✅ FOCUS PRINCIPALE
                 };
+                
+                logDebug('📊 Stato iniziale expandedCategories', this.state.expandedCategories);
                 
                 this.init();
             }
             
             init() {
+                logDebug('⚙️ init() chiamata');
                 this.setupFirebaseListeners();
                 this.render();
                 
@@ -244,6 +218,8 @@
                         this.setState({ syncStatus: '🔴 Offline' });
                     }
                 }, 5000);
+                
+                logDebug('✅ init() completata');
             }
             
             setupFirebaseListeners() {
@@ -251,50 +227,64 @@
                 
                 try {
                     const unsubscribeOrders = firebaseService.onSnapshot('orders', (data) => {
-                        console.log('📨 Ricevuti orders:', data);
+                        logDebug('📨 Ricevuti orders', data);
                         this.setState({ orders: data || {}, syncStatus: '🔥 Sincronizzato Firebase' });
                     });
 
                     const unsubscribeActive = firebaseService.onSnapshot('activeOrders', (data) => {
-                        console.log('📨 Ricevuti activeOrders:', data);
+                        logDebug('📨 Ricevuti activeOrders', data);
                         this.setState({ activeOrders: Array.isArray(data) ? data : [] });
                     });
 
                     const unsubscribeHistory = firebaseService.onSnapshot('orderHistory', (data) => {
-                        console.log('📨 Ricevuti orderHistory:', data);
+                        logDebug('📨 Ricevuti orderHistory', data);
                         this.setState({ orderHistory: Array.isArray(data) ? data : [] });
                     });
 
                     const unsubscribeTables = firebaseService.onSnapshot('tables', (data) => {
-                        console.log('📨 Ricevuti tables:', data);
+                        logDebug('📨 Ricevuti tables', data);
                         if (Array.isArray(data) && data.length > 0) {
                             this.setState({ customTables: data });
                         }
                     });
 
                     const unsubscribeMenu = firebaseService.onSnapshot('menuData', (data) => {
-                        console.log('📨 Ricevuti menuData:', data);
+                        logDebug('📨 Ricevuti menuData', data);
                         this.setState({ customMenuData: data });
                     });
                 } catch (error) {
-                    console.error('Errore setup Firebase listeners:', error);
+                    logDebug('Errore setup Firebase listeners', error);
                     this.setState({ syncStatus: '❌ Errore connessione' });
                 }
             }
             
             setState(newState) {
+                logDebug('🔄 setState chiamata', newState);
+                
+                const oldState = { ...this.state };
                 this.state = { ...this.state, ...newState };
+                
+                // Debug specifico per expandedCategories
+                if (newState.expandedCategories) {
+                    logDebug('📊 CAMBIO expandedCategories:', {
+                        vecchio: oldState.expandedCategories,
+                        nuovo: this.state.expandedCategories
+                    });
+                }
+                
+                logDebug('🎨 Chiamando render() da setState');
                 this.render();
+                logDebug('✅ setState completata');
             }
             
-            // ✅ METODO RENDER - FONDAMENTALE PER AGGIORNARE IL DOM
             render() {
-                console.log('🎨 render() chiamata, vista corrente:', this.state.currentView);
-                console.log('🎨 expandedCategories nel render:', this.state.expandedCategories);
+                logDebug('🎨 ===== RENDER CHIAMATA =====');
+                logDebug('📊 Vista corrente', this.state.currentView);
+                logDebug('📊 expandedCategories nel render', this.state.expandedCategories);
                 
                 const appElement = document.getElementById('app');
                 if (!appElement) {
-                    console.error('❌ Elemento #app non trovato!');
+                    logDebug('❌ Elemento #app non trovato!');
                     return;
                 }
                 
@@ -302,32 +292,42 @@
                 
                 switch(this.state.currentView) {
                     case 'tables':
+                        logDebug('🏠 Rendering TableView');
                         content = this.renderTableView();
                         break;
                     case 'menu':
+                        logDebug('📋 Rendering MenuView');
                         content = this.renderMenuView();
                         break;
                     case 'kitchen':
+                        logDebug('👨‍🍳 Rendering KitchenView');
                         content = this.renderKitchenView();
                         break;
                     case 'history':
+                        logDebug('🕐 Rendering HistoryView');
                         content = this.renderHistoryView();
                         break;
                     default:
+                        logDebug('🏠 Rendering TableView (default)');
                         content = this.renderTableView();
                 }
                 
+                logDebug('🔧 Aggiornando DOM...');
                 appElement.innerHTML = content;
-                console.log('✅ render() completata, DOM aggiornato');
+                logDebug('✅ ===== RENDER COMPLETATA =====');
             }
             
             // Menu categories - usa CSV se disponibile, altrimenti menu di default
             get menuCategories() {
+                logDebug('📋 Richiesto menuCategories');
+                
                 // Se c'è un menu personalizzato da CSV, usalo
                 if (this.state.customMenuData) {
+                    logDebug('📄 Usando menu CSV personalizzato');
                     return this.state.customMenuData;
                 }
                 
+                logDebug('🔧 Usando menu di default');
                 // Altrimenti usa il menu di default
                 return {
                     "Cocktail Analcolico": [
@@ -340,28 +340,63 @@
                         { id: 5, name: "Caffè", price: 1.2, ingredients: "Caffè in grani, acqua", description: "Miscela dal gusto pieno e rotondo." },
                         { id: 6, name: "Cappuccino", price: 1.5, ingredients: "Latte fresco, caffè", description: "Un abbraccio caldo per iniziare la giornata." },
                         { id: 7, name: "Acqua naturale", price: 1, ingredients: "Acqua", description: "Acqua sempre disponibile." },
-                        { id: 8, name: "Acqua gassata", price: 1, ingredients: "Acqua", description: "Acqua frizzante sempre disponibile." },
-                        { id: 9, name: "Succo artigianale Ananas", price: 5, ingredients: "Ananas", description: "Preparato fresco ogni giorno." },
-                        { id: 10, name: "Succo artigianale Mela", price: 5, ingredients: "Mela verde", description: "Solo mele fresche, lavorate da noi con cura." },
-                        { id: 11, name: "Kombucha Cedro", price: 4.5, ingredients: "Acqua tè nero Zucchero Coltura di Kombucha", description: "Cedro aspro, aromatico, irresistibile." },
-                        { id: 12, name: "Smoothie Fragole", price: 5, ingredients: "Fragole e latte", description: "Cremoso, fresco, genuino." }
+                        { id: 8, name: "Acqua gassata", price: 1, ingredients: "Acqua", description: "Acqua frizzante sempre disponibile." }
                     ],
                     "Cocktail": [
                         { id: 13, name: "CHIOSCO AL MARE", price: 15, ingredients: "Gin dry Vermouth bianco Cetriolo Lime", description: "Il nostro cocktail signature. Botanico e pulito." },
-                        { id: 14, name: "Ginger Mule Light", price: 10, ingredients: "Vodka infusa allo zenzero Lime Ginger beer", description: "Classico con spirito Zenzo." },
-                        { id: 15, name: "THE SALT", price: 15, ingredients: "Gin Artigianale Lime Sale della Cornovaglia", description: "Creato da Paolo Santoro. Sapido e vibrante." },
-                        { id: 16, name: "Ginger Vodka & Tonic", price: 10, ingredients: "Vodka infusa allo zenzero Acqua tonica premium", description: "Essenziale, ma con carattere." }
-                    ],
-                    "Panino": [
-                        { id: 17, name: "Calamarino", price: 6, ingredients: "Calamaro scottato zucchine grigliate menta", description: "Tenero, profumato. Estate pura in un morso." },
-                        { id: 18, name: "Salmon Zeta", price: 6, ingredients: "Salmone affumicato avocado cipolla rossa", description: "Nordico, tropicale e Zenzo." },
-                        { id: 19, name: "Fresco Zeta", price: 6, ingredients: "Avocado zenzero carote lattughino", description: "Completamente vegetale. Freschezza al 100%." }
-                    ],
-                    "Dolce": [
-                        { id: 20, name: "Torta Zenzo Bar", price: 4, ingredients: "Pan di Spagna speziato crema diplomatica", description: "La torta firma di Zenzo Bar." },
-                        { id: 21, name: "Cheesecake allo zenzero", price: 4, ingredients: "Formaggio spalmabile zenzero fresco", description: "Equilibrio tra cremosità e piccante." }
+                        { id: 14, name: "Ginger Mule Light", price: 10, ingredients: "Vodka infusa allo zenzero Lime Ginger beer", description: "Classico con spirito Zenzo." }
                     ]
                 };
+            }
+            
+            // ✅ METODO TOGGLE CATEGORIA CON DEBUG COMPLETO
+            toggleCategory(category) {
+                logDebug('🔄 ===== TOGGLE CATEGORIA CHIAMATA =====');
+                logDebug('📂 Categoria richiesta', category);
+                logDebug('📊 Stato attuale expandedCategories', this.state.expandedCategories);
+                logDebug('📊 Categoria attualmente espansa?', this.state.expandedCategories[category]);
+                
+                const currentExpanded = this.state.expandedCategories[category] || false;
+                const newExpanded = !currentExpanded;
+                
+                logDebug('🔄 Cambio stato:', { da: currentExpanded, a: newExpanded });
+                
+                const newExpandedCategories = {
+                    ...this.state.expandedCategories,
+                    [category]: newExpanded
+                };
+                
+                logDebug('📊 Nuovo stato expandedCategories completo', newExpandedCategories);
+                
+                // ✅ CHIAMATA setState CHE DEVE ATTIVARE render()
+                this.setState({ expandedCategories: newExpandedCategories });
+                
+                logDebug('✅ ===== TOGGLE CATEGORIA COMPLETATA =====');
+            }
+
+            expandAllCategories() {
+                logDebug('📂 ===== ESPANDI TUTTO =====');
+                const allCategories = Object.keys(this.menuCategories);
+                logDebug('📂 Tutte le categorie trovate', allCategories);
+                
+                const newExpandedCategories = {};
+                allCategories.forEach(category => {
+                    newExpandedCategories[category] = true;
+                });
+                
+                logDebug('📂 Nuovo stato expandedCategories (tutto espanso)', newExpandedCategories);
+                this.setState({ expandedCategories: newExpandedCategories });
+                logDebug('✅ ===== ESPANDI TUTTO COMPLETATO =====');
+            }
+
+            collapseAllCategories() {
+                logDebug('📁 ===== CHIUDI TUTTO =====');
+                logDebug('📁 Stato precedente', this.state.expandedCategories);
+                
+                this.setState({ expandedCategories: {} });
+                
+                logDebug('📁 Nuovo stato: {}');
+                logDebug('✅ ===== CHIUDI TUTTO COMPLETATO =====');
             }
             
             generateTableLayout(count) {
@@ -382,6 +417,7 @@
             }
             
             async addToOrder(item) {
+                logDebug('🛒 Aggiunto item all\'ordine', item);
                 const currentOrder = this.getCurrentOrder();
                 const existingItem = currentOrder.find(orderItem => orderItem.id === item.id);
                 
@@ -400,722 +436,26 @@
                 await firebaseService.update('orders', updatedTableOrders);
             }
             
-            async removeFromOrder(itemId) {
-                const currentOrder = this.getCurrentOrder();
-                const updatedOrder = currentOrder.map(item =>
-                    item.id === itemId
-                        ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-                        : item
-                ).filter(item => item.quantity > 0);
-
-                const updatedTableOrders = {
-                    ...this.state.orders,
-                    [this.state.selectedTable]: updatedOrder
-                };
-
-                this.setState({ orders: updatedTableOrders });
-                await firebaseService.update('orders', updatedTableOrders);
-            }
-            
-            calculateTotal() {
-                return this.getCurrentOrder().reduce((total, item) => total + (item.price * item.quantity), 0);
-            }
-            
-            async printOrder() {
-                const currentOrder = this.getCurrentOrder();
-                if (currentOrder.length === 0) {
-                    alert('Nessun articolo nell\'ordine!');
-                    return;
-                }
-
-                this.setState({ syncStatus: '🔄 Invio in cucina...' });
-                
-                try {
-                    const newOrder = {
-                        id: Date.now(),
-                        tableNumber: this.state.selectedTable,
-                        items: [...currentOrder],
-                        total: this.calculateTotal(),
-                        timestamp: new Date(),
-                        state: 'sent',
-                        isModified: false,
-                        version: 1
-                    };
-                    
-                    const updatedActiveOrders = [...this.state.activeOrders, newOrder];
-                    this.setState({ activeOrders: updatedActiveOrders });
-                    await firebaseService.update('activeOrders', updatedActiveOrders);
-                    
-                    const clearedOrders = { ...this.state.orders };
-                    delete clearedOrders[this.state.selectedTable];
-                    this.setState({ orders: clearedOrders });
-                    await firebaseService.update('orders', clearedOrders);
-                    
-                    this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
-                    alert('✅ ORDINE INVIATO IN CUCINA!');
-                    this.setState({ currentView: 'tables' });
-                } catch (error) {
-                    this.setState({ syncStatus: '❌ Errore invio' });
-                    alert('❌ Errore durante l\'invio in cucina. Riprova.');
-                }
-            }
-            
-            // ✅ METODO CORRETTO PER TOGGLE CATEGORIA
-            toggleCategory(category) {
-                console.log('🔄 toggleCategory chiamata per:', category);
-                console.log('📊 Stato corrente expandedCategories:', this.state.expandedCategories);
-                console.log('📊 Categoria attualmente espansa?', this.state.expandedCategories[category]);
-                
-                const newExpandedCategories = {
-                    ...this.state.expandedCategories,
-                    [category]: !this.state.expandedCategories[category]
-                };
-                
-                console.log('📊 Nuovo stato expandedCategories:', newExpandedCategories);
-                console.log('📊 Categoria sarà espansa?', newExpandedCategories[category]);
-                
-                // ✅ CHIAMA setState CHE ATTIVA AUTOMATICAMENTE render()
-                this.setState({ expandedCategories: newExpandedCategories });
-                console.log('✅ setState chiamata con nuove expandedCategories');
-            }
-
-            expandAllCategories() {
-                const allCategories = Object.keys(this.menuCategories);
-                const newExpandedCategories = {};
-                allCategories.forEach(category => {
-                    newExpandedCategories[category] = true;
-                });
-                this.setState({ expandedCategories: newExpandedCategories });
-            }
-
-            collapseAllCategories() {
-                this.setState({ expandedCategories: {} });
-            }
-
-            closeOrderFromKitchen(orderId) {
-                const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
-                
-                if (!orderToClose) {
-                    alert('❌ Ordine non trovato!');
-                    return;
-                }
-
-                const closedOrder = {
-                    ...orderToClose,
-                    state: 'paid',
-                    closedAt: new Date(),
-                    closedBy: 'kitchen'
-                };
-                
-                const updatedHistory = [closedOrder, ...this.state.orderHistory];
-                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id != orderId);
-                
-                this.setState({ 
-                    orderHistory: updatedHistory,
-                    activeOrders: updatedActiveOrders
-                });
-                
-                firebaseService.update('orderHistory', updatedHistory);
-                firebaseService.update('activeOrders', updatedActiveOrders);
-                
-                alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
-            }
-
-            closeOrderFromWaiter(tableNumber) {
-                const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
-                
-                if (!orderToClose) {
-                    alert('❌ Nessun ordine attivo per questo tavolo!');
-                    return;
-                }
-
-                const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
-                
-                if (!window.confirm(confirmMsg)) {
-                    return;
-                }
-
-                const closedOrder = {
-                    ...orderToClose,
-                    state: 'paid',
-                    closedAt: new Date(),
-                    closedBy: 'waiter'
-                };
-                
-                const updatedHistory = [closedOrder, ...this.state.orderHistory];
-                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
-                
-                this.setState({
-                    orderHistory: updatedHistory,
-                    activeOrders: updatedActiveOrders
-                });
-                
-                firebaseService.update('orderHistory', updatedHistory);
-                firebaseService.update('activeOrders', updatedActiveOrders);
-                
-                alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
-            }
-            
-            renderHistoryView() {
-                return `
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
-                            <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                                ✕ Chiudi
-                            </button>
-                        </div>
-                        
-                        ${this.state.orderHistory.length === 0 ? `
-                            <div class="text-center text-gray-500 mt-12">
-                                <div class="text-6xl mb-4">🕐</div>
-                                <p>Nessun ordine chiuso oggi</p>
-                                <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
-                            </div>
-                        ` : `
-                            <div class="space-y-4">
-                                ${this.state.orderHistory.map(order => `
-                                    <div class="bg-white rounded-lg shadow p-4 border">
-                                        <div class="flex justify-between items-start mb-3">
-                                            <div>
-                                                <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
-                                                <p class="text-gray-600 text-sm">Ordinato: ${new Date(order.timestamp).toLocaleString('it-IT')}</p>
-                                                <p class="text-gray-600 text-sm">Chiuso: ${new Date(order.closedAt).toLocaleString('it-IT')}</p>
-                                                <p class="text-blue-600 text-sm font-medium">
-                                                    Incassato da: ${order.closedBy === 'kitchen' ? '👨‍🍳 Cucina' : '👤 Cameriere'}
-                                                </p>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="text-2xl font-bold text-green-600">€${order.total.toFixed(2)}</div>
-                                                <div class="text-sm text-gray-500">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
-                                                <div class="text-xs text-green-600 font-medium mt-1">💰 PAGATO</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="border-t pt-3">
-                                            ${order.items.map(item => `
-                                                <div class="flex justify-between text-sm mb-1">
-                                                    <span>${item.quantity}x ${item.name}</span>
-                                                    <span>€${(item.price * item.quantity).toFixed(2)}</span>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `}
-                    </div>
-                `;
-            }
-
-            async loadMenuFromCSV(file = null) {
-                console.log('🚀 INIZIO loadMenuFromCSV, file:', file ? 'Caricato dall\'utente' : 'File predefinito');
-                
-                try {
-                    let csvContent;
-                    
-                    if (file) {
-                        console.log('📂 Lettura file utente...');
-                        csvContent = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = e => resolve(e.target.result);
-                            reader.onerror = reject;
-                            reader.readAsText(file, 'utf-8');
-                        });
-                        console.log('✅ File utente letto, lunghezza:', csvContent.length);
-                    } else {
-                        console.log('📄 Tentativo lettura file predefinito...');
-                        try {
-                            csvContent = await window.fs.readFile('Menu29Giu copia.csv', { encoding: 'utf8' });
-                            console.log('✅ Menu29Giu copia.csv letto, lunghezza:', csvContent.length);
-                        } catch (error) {
-                            console.log('⚠️ Menu29Giu copia.csv non trovato, provo Menu29Giu.csv...');
-                            try {
-                                csvContent = await window.fs.readFile('Menu29Giu.csv', { encoding: 'utf8' });
-                                console.log('✅ Menu29Giu.csv letto, lunghezza:', csvContent.length);
-                            } catch (error2) {
-                                console.error('❌ Nessun file CSV trovato:', error2);
-                                alert('❌ File CSV non trovato. Seleziona un file CSV da caricare.');
-                                return;
-                            }
-                        }
-                    }
-                    
-                    console.log('🔧 Inizio parsing CSV...');
-                    
-                    // PARSER DEFINITIVO che gestisce virgolette multi-riga
-                    function parseCSVCorrectly(content) {
-                        console.log('📊 Parser avviato, contenuto lunghezza:', content.length);
-                        
-                        const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-                        const allLines = normalized.split('\n');
-                        
-                        console.log(`📄 Righe totali nel file: ${allLines.length}`);
-                        console.log(`📄 Prima riga: "${allLines[0]}"`);
-                        
-                        // Ricostruisci le righe complete gestendo le virgolette
-                        const completeLines = [];
-                        let currentRecord = '';
-                        let insideQuotes = false;
-                        
-                        for (let i = 0; i < allLines.length; i++) {
-                            const line = allLines[i];
-                            
-                            if (currentRecord) {
-                                currentRecord += '\n' + line;
-                            } else {
-                                currentRecord = line;
-                            }
-                            
-                            // Conta virgolette nella riga corrente completa
-                            const quoteCount = (currentRecord.match(/"/g) || []).length;
-                            insideQuotes = quoteCount % 2 === 1;
-                            
-                            // Se non siamo dentro virgolette e abbiamo contenuto, la riga è completa
-                            if (!insideQuotes && currentRecord.trim()) {
-                                completeLines.push(currentRecord);
-                                currentRecord = '';
-                            }
-                        }
-                        
-                        // Aggiungi l'ultima riga se rimasta
-                        if (currentRecord.trim()) {
-                            completeLines.push(currentRecord);
-                        }
-                        
-                        console.log(`📋 Righe ricostruite: ${completeLines.length}`);
-                        
-                        if (completeLines.length < 2) {
-                            throw new Error('File CSV non valido - meno di 2 righe complete trovate');
-                        }
-                        
-                        // Parse header
-                        const headerLine = completeLines[0];
-                        console.log(`📋 Header line: "${headerLine}"`);
-                        
-                        const headers = headerLine.split(';').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
-                        
-                        console.log(`📊 Headers trovati (${headers.length}): ${headers.join(' | ')}`);
-                        
-                        // Verifica headers
-                        const expectedHeaders = ['Item', 'CATEGORIA', 'PREZZO', 'INGREDIENTI PRINCIPALI', 'STORYTELLING'];
-                        const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
-                        if (missingHeaders.length > 0) {
-                            console.error('❌ Headers mancanti:', missingHeaders);
-                            throw new Error(`Headers mancanti nel CSV: ${missingHeaders.join(', ')}\n\nHeaders trovati: ${headers.join(', ')}\n\nHeaders attesi: ${expectedHeaders.join(', ')}`);
-                        }
-                        
-                        console.log('✅ Tutti gli headers richiesti sono presenti');
-                        
-                        // Parse dati
-                        const data = [];
-                        for (let i = 1; i < completeLines.length; i++) {
-                            const line = completeLines[i];
-                            if (!line.trim()) continue;
-                            
-                            // Split intelligente che rispetta le virgolette
-                            const fields = [];
-                            let currentField = '';
-                            let inQuotes = false;
-                            
-                            for (let j = 0; j < line.length; j++) {
-                                const char = line[j];
-                                
-                                if (char === '"') {
-                                    inQuotes = !inQuotes;
-                                } else if (char === ';' && !inQuotes) {
-                                    fields.push(currentField.trim());
-                                    currentField = '';
-                                } else {
-                                    currentField += char;
-                                }
-                            }
-                            
-                            fields.push(currentField.trim());
-                            
-                            // Crea oggetto riga
-                            const row = {};
-                            headers.forEach((header, index) => {
-                                let value = fields[index] || '';
-                                
-                                // Rimuovi virgolette esterne
-                                if (value.startsWith('"') && value.endsWith('"')) {
-                                    value = value.slice(1, -1);
-                                }
-                                
-                                // Conversione PREZZO
-                                if (header === 'PREZZO' && value) {
-                                    const num = parseFloat(value.replace(',', '.'));
-                                    if (!isNaN(num)) value = num;
-                                }
-                                
-                                row[header] = value;
-                            });
-                            
-                            data.push(row);
-                        }
-                        
-                        console.log(`✅ Parsing completato: ${data.length} righe di dati`);
-                        
-                        return {
-                            data: data,
-                            meta: { fields: headers, delimiter: ';' }
-                        };
-                    }
-                    
-                    const parsedData = parseCSVCorrectly(csvContent);
-                    
-                    console.log('✅ PARSING COMPLETATO!');
-                    console.log(`📊 Campi: ${parsedData.meta.fields.join(', ')}`);
-                    console.log(`📋 Righe dati: ${parsedData.data.length}`);
-                    
-                    // Mostra esempi primi 2 articoli
-                    parsedData.data.slice(0, 2).forEach((item, i) => {
-                        console.log(`\n📄 Articolo ${i + 1}:`);
-                        console.log(`  Nome: ${item.Item}`);
-                        console.log(`  Categoria: ${item.CATEGORIA}`);
-                        console.log(`  Prezzo: ${item.PREZZO}`);
-                        console.log(`  Ingredienti: ${item['INGREDIENTI PRINCIPALI'] ? 'SÌ' : 'NO'} (${(item['INGREDIENTI PRINCIPALI'] || '').length} char)`);
-                        console.log(`  Storytelling: ${item['STORYTELLING'] ? 'SÌ' : 'NO'} (${(item['STORYTELLING'] || '').length} char)`);
-                    });
-
-                    // Filtra articoli validi
-                    const validItems = parsedData.data.filter(item => {
-                        return item.CATEGORIA && item.Item && item.PREZZO && item.PREZZO > 0;
-                    });
-
-                    if (validItems.length === 0) {
-                        throw new Error('Nessun articolo valido trovato');
-                    }
-
-                    console.log(`✅ Articoli validi: ${validItems.length}/${parsedData.data.length}`);
-
-                    // Raggruppa per categoria
-                    const itemsByCategory = {};
-                    validItems.forEach(item => {
-                        const category = item.CATEGORIA;
-                        if (!itemsByCategory[category]) {
-                            itemsByCategory[category] = [];
-                        }
-                        itemsByCategory[category].push(item);
-                    });
-
-                    // Converte nel formato app
-                    const menuData = {};
-                    let globalId = 1;
-
-                    Object.entries(itemsByCategory).forEach(([category, items]) => {
-                        menuData[category] = items.map(item => ({
-                            id: globalId++,
-                            name: item.Item,
-                            price: parseFloat(item.PREZZO) || 0,
-                            ingredients: item['INGREDIENTI PRINCIPALI'] || '',
-                            description: item['STORYTELLING'] || '',
-                            category: item.CATEGORIA
-                        }));
-                    });
-
-                    console.log(`🎯 Menu finale: ${Object.keys(menuData).length} categorie, ${globalId - 1} articoli`);
-
-                    // Salva su Firebase
-                    await firebaseService.update('menuData', menuData);
-                    
-                    this.setState({ 
-                        customMenuData: menuData,
-                        syncStatus: '🔥 Menu CSV caricato!'
-                    });
-
-                    const totalItems = globalId - 1;
-                    const categories = Object.keys(menuData).length;
-                    const skipped = parsedData.data.length - validItems.length;
-                    
-                    alert(`✅ MENU CSV CARICATO!\n\n📂 ${categories} categorie\n🍽️ ${totalItems} articoli\n⚠️ ${skipped} scartati\n\n🔥 Ingredienti e descrizioni inclusi!`);
-
-                } catch (error) {
-                    console.error('❌ ERRORE COMPLETO:', error);
-                    console.error('❌ Stack trace:', error.stack);
-                    alert(`❌ Errore caricamento CSV:\n\n${error.message}`);
-                }
-            }
-
-            triggerCSVUpload() {
-                // Crea un input file nascosto e attivalo
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.csv';
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        this.loadMenuFromCSV(file);
-                    }
-                };
-                input.click();
-            }
-
-            useDefaultMenu() {
-                const confirmMsg = '⚠️ Tornare al menu di default?\n\nIl menu CSV personalizzato verrà disattivato.';
-                if (!window.confirm(confirmMsg)) return;
-
-                this.setState({ 
-                    customMenuData: null,
-                    syncStatus: '🔥 Menu di default attivato'
-                });
-                
-                firebaseService.update('menuData', null);
-                alert('✅ Menu di default riattivato!');
-            }
-
-            editTable(tableId) {
-                this.setState({ editingTable: tableId });
-            }
-            
-            async saveTableEdit(tableId, newSeats) {
-                const updatedTables = this.tables.map(table => 
-                    table.id === tableId 
-                        ? { ...table, seats: parseInt(newSeats) || 2 }
-                        : table
-                );
-                
-                this.setState({ 
-                    customTables: updatedTables,
-                    editingTable: null 
-                });
-                
-                await firebaseService.update('tables', updatedTables);
-            }
-            
-            cancelTableEdit() {
-                this.setState({ editingTable: null });
-            }
-
-            async applyTableLayout() {
-                // Avvisa se ci sono ordini
-                const hasActiveOrders = this.state.activeOrders.length > 0;
-                const hasDraftOrders = Object.keys(this.state.orders).length > 0;
-                
-                if (hasActiveOrders || hasDraftOrders) {
-                    const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
-                    const confirmMsg = `⚠️ APPLICAZIONE LAYOUT!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI.\n\nVuoi continuare?`;
-                    
-                    if (!window.confirm(confirmMsg)) {
-                        return;
-                    }
-                }
-                
-                // Conserva le personalizzazioni esistenti o crea nuovi tavoli
-                const currentTables = [...this.tables];
-                const newTables = [];
-                
-                for (let i = 0; i < this.state.tableCount; i++) {
-                    const existingTable = currentTables.find(t => t.number === i + 1);
-                    if (existingTable) {
-                        // Mantieni il tavolo esistente con i suoi posti personalizzati
-                        newTables.push({ ...existingTable, id: i + 1 });
-                    } else {
-                        // Crea nuovo tavolo con posti di default
-                        const defaultSeats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
-                        newTables.push({ id: i + 1, number: i + 1, seats: defaultSeats });
-                    }
-                }
-                
-                this.setState({ 
-                    customTables: newTables,
-                    editingTable: null,
-                    orders: {},           // Cancella ordini in bozza
-                    activeOrders: []      // Cancella ordini in cucina
-                });
-                
-                // Aggiorna Firebase
-                await firebaseService.update('tables', newTables);
-                await firebaseService.update('orders', {});
-                await firebaseService.update('activeOrders', []);
-                
-                alert(`✅ LAYOUT APPLICATO!\n\n• Tavoli: ${this.state.tableCount}\n• Personalizzazioni mantenute\n• Ordini cancellati`);
-            }
-
-            resetTables() {
-                // Avvisa SEMPRE se ci sono ordini
-                const hasActiveOrders = this.state.activeOrders.length > 0;
-                const hasDraftOrders = Object.keys(this.state.orders).length > 0;
-                
-                if (hasActiveOrders || hasDraftOrders) {
-                    const totalOrders = this.state.activeOrders.length + Object.keys(this.state.orders).length;
-                    const confirmMsg = `⚠️ RESET COMPLETO!\n\nCi sono ${totalOrders} ordini aperti che verranno CANCELLATI definitivamente.\n\nQuesto include:\n- Ordini in bozza\n- Ordini in cucina\n- TUTTE le personalizzazioni dei tavoli\n\nSei SICURO di voler continuare?\n\n⚠️ QUESTA AZIONE NON È REVERSIBILE!`;
-                    
-                    if (!window.confirm(confirmMsg)) {
-                        return;
-                    }
-                }
-                
-                // RESET COMPLETO - rigenera tutto da zero
-                const newTables = [];
-                for (let i = 0; i < this.state.tableCount; i++) {
-                    const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
-                    newTables.push({ id: i + 1, number: i + 1, seats: seats });
-                }
-                
-                this.setState({ 
-                    customTables: newTables,
-                    editingTable: null, 
-                    showSettings: false,
-                    orders: {},           
-                    activeOrders: []      
-                });
-                
-                firebaseService.update('tables', newTables);
-                firebaseService.update('orders', {});
-                firebaseService.update('activeOrders', []);
-                
-                alert(`✅ RESET COMPLETO ESEGUITO!\n\n• Tavoli: ${this.state.tableCount}\n• Tutte le personalizzazioni cancellate\n• Tutti gli ordini cancellati`);
-            }
-            
             renderTableView() {
+                logDebug('🏠 Rendering vista tavoli');
                 return `
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
+                                <h1 class="text-2xl font-bold text-gray-800">🔥 ZenzoBar - DEBUG MODE</h1>
                                 <div class="text-sm text-gray-600 mt-1">
                                     ${this.state.syncStatus} • Multi-Device Ready
                                 </div>
+                                <button onclick="document.getElementById('debug-panel').style.display='block'" class="mt-2 px-3 py-1 bg-purple-600 text-white rounded text-sm">
+                                    🐛 Mostra Debug Panel
+                                </button>
                             </div>
                             <div class="flex gap-3">
                                 <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                     👨‍🍳 Cucina
-                                    ${this.state.activeOrders.length > 0 ? 
-                                        `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
-                                        : ''
-                                    }
-                                </button>
-                                <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                                    ⚙️ Configura
-                                </button>
-                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    🕐 Storico
                                 </button>
                             </div>
                         </div>
-                        
-                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
-                            <div class="flex">
-                                <div class="flex-shrink-0">🔥</div>
-                                <div class="ml-3">
-                                    <p class="text-sm">
-                                        <strong>Firebase Real-Time attivo!</strong><br/>
-                                        Sincronizzazione multi-device funzionante. Apri l'app su smartphone, tablet o altri PC per vedere gli aggiornamenti in tempo reale.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${this.state.showSettings ? `
-                            <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-                                <h3 class="text-lg font-semibold mb-4">Configurazione Menu</h3>
-                                
-                                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <h4 class="font-medium mb-3 text-blue-800">📋 Gestione Menu</h4>
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <span class="font-medium">Menu attivo:</span>
-                                                <span class="ml-2 px-2 py-1 rounded text-sm ${this.state.customMenuData ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                                                    ${this.state.customMenuData ? '📄 Menu CSV' : '🔧 Menu di Default'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        ${this.state.customMenuData ? `
-                                            <div class="text-sm text-gray-600">
-                                                📊 ${Object.keys(this.state.customMenuData).length} categorie • 
-                                                ${Object.values(this.state.customMenuData).reduce((sum, items) => sum + items.length, 0)} articoli totali
-                                            </div>
-                                        ` : ''}
-                                        
-                                        <div class="flex gap-3 flex-wrap">
-                                            <button onclick="app.triggerCSVUpload()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                📂 Seleziona File CSV
-                                            </button>
-                                            <button onclick="app.loadMenuFromCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                                                📄 Carica Menu CSV
-                                            </button>
-                                            ${this.state.customMenuData ? `
-                                                <button onclick="app.useDefaultMenu()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                                                    🔄 Torna al Menu di Default
-                                                </button>
-                                            ` : ''}
-                                        </div>
-                                        
-                                        <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-600">
-                                            <strong>💡 Come usare:</strong><br/>
-                                            • <strong>📂 Seleziona File CSV:</strong> Carica un nuovo file CSV dal tuo computer<br/>
-                                            • <strong>📄 Carica Menu CSV:</strong> Usa il file predefinito se già caricato nell'app<br/>
-                                            • <strong>Formato richiesto:</strong> Item,CATEGORIA,PREZZO,INGREDIENTI PRINCIPALI,STORYTELLING<br/>
-                                            • <strong>Delimitatore:</strong> ; (punto e virgola)
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="border-t pt-4 mt-4">
-                                    <h4 class="font-medium mb-3">Configurazione Tavoli</h4>
-                                    
-                                    <div class="flex items-center gap-4 mb-6">
-                                        <label class="font-medium">Numero di tavoli:</label>
-                                        <input type="number" min="1" max="20" value="${this.state.tableCount}" 
-                                               onchange="app.setState({tableCount: parseInt(this.value) || 1})"
-                                               class="border rounded px-3 py-2 w-20">
-                                        <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                            📐 Applica Layout
-                                        </button>
-                                        <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                                            🔄 Reset Completo
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
-                                        <div class="flex">
-                                            <div class="flex-shrink-0">⚠️</div>
-                                            <div class="ml-3 text-sm">
-                                                <p><strong>📐 Applica Layout:</strong> Mantiene le personalizzazioni dei posti, cancella solo gli ordini</p>
-                                                <p><strong>🔄 Reset Completo:</strong> Cancella TUTTO (ordini + personalizzazioni) e ricrea i tavoli da zero</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                <div class="border-t pt-4 mt-4">
-                                    <h4 class="font-medium mb-3">Modifica Posti per Tavolo:</h4>
-                                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                        ${this.tables.map(table => `
-                                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                <span class="font-medium">Tavolo ${table.number}</span>
-                                                ${this.state.editingTable === table.id ? `
-                                                    <div class="flex items-center gap-2">
-                                                        <input type="number" min="1" max="12" value="${table.seats}" 
-                                                               id="seats-${table.id}"
-                                                               class="border rounded px-2 py-1 w-16 text-center">
-                                                        <button onclick="app.saveTableEdit(${table.id}, document.getElementById('seats-${table.id}').value)" 
-                                                                class="px-2 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">✓</button>
-                                                        <button onclick="app.cancelTableEdit()" 
-                                                                class="px-2 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">✕</button>
-                                                    </div>
-                                                ` : `
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="text-gray-600">👥 ${table.seats} posti</span>
-                                                        <button onclick="app.editTable(${table.id})" 
-                                                                class="px-2 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">✏️</button>
-                                                    </div>
-                                                `}
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-
-                                <div class="border-t pt-4 mt-4">
-                                    <button onclick="app.setState({showSettings: false})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                                        Chiudi Configurazione
-                                    </button>
-                                </div>
-                            </div>
-                        ` : ''}
                         
                         <div class="bg-white rounded-lg p-8 shadow-sm border">
                             <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
@@ -1142,16 +482,6 @@
                                             <div class="text-xs flex items-center gap-1 opacity-80">
                                                 👥 ${table.seats}
                                             </div>
-                                            
-                                            ${(hasDraftOrder || activeOrder) ? `
-                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
-                                                    ${hasDraftOrder 
-                                                        ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
-                                                        : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
-                                                    }
-                                                </div>
-                                            ` : ''}
-                                            
                                             <div class="absolute bottom-1 text-xs font-medium">
                                                 ${statusText}
                                             </div>
@@ -1165,27 +495,25 @@
             }
             
             renderMenuView() {
+                logDebug('📋 ===== RENDERING MENU VIEW =====');
+                
                 const table = this.tables.find(t => t.id === this.state.selectedTable);
                 const currentOrder = this.getCurrentOrder();
                 const categories = Object.keys(this.menuCategories);
-                const hasExpandedCategories = Object.values(this.state.expandedCategories).some(expanded => expanded);
+                
+                logDebug('📋 Categorie trovate', categories);
+                logDebug('📊 expandedCategories corrente', this.state.expandedCategories);
                 
                 return `
                     <div class="flex flex-col h-screen bg-gray-50">
                         <div class="bg-white shadow-sm p-4 flex justify-between items-center">
                             <div class="flex items-center gap-4">
                                 <button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg">✕</button>
-                                <h1 class="text-xl font-bold">Tavolo ${table?.number}</h1>
+                                <h1 class="text-xl font-bold">Tavolo ${table?.number} - DEBUG MODE</h1>
+                                <button onclick="document.getElementById('debug-panel').style.display='block'" class="px-3 py-1 bg-purple-600 text-white rounded text-sm">
+                                    🐛 Debug
+                                </button>
                             </div>
-                            
-                            ${currentOrder.length > 0 ? `
-                                <div class="flex items-center gap-4">
-                                    <div class="text-lg font-bold text-green-600">€${this.calculateTotal().toFixed(2)}</div>
-                                    <button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                        🖨️ Invia in Cucina
-                                    </button>
-                                </div>
-                            ` : ''}
                         </div>
 
                         <div class="flex flex-1 overflow-hidden">
@@ -1193,12 +521,12 @@
                                 <!-- Header categorie con controlli -->
                                 <div class="sticky top-0 bg-white border-b-2 border-gray-200 p-4 shadow-sm">
                                     <div class="flex justify-between items-center mb-3">
-                                        <h2 class="text-lg font-bold text-gray-800">📋 Menu</h2>
+                                        <h2 class="text-lg font-bold text-gray-800">📋 Menu (DEBUG)</h2>
                                         <div class="flex gap-2">
-                                            <button onclick="window.expandAll()" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            <button onclick="app.expandAllCategories()" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
                                                 📂 Espandi Tutto
                                             </button>
-                                            <button onclick="window.collapseAll()" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
+                                            <button onclick="app.collapseAllCategories()" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
                                                 📁 Chiudi Tutto
                                             </button>
                                         </div>
@@ -1206,18 +534,23 @@
                                     <div class="text-sm text-gray-600">
                                         👆 Clicca su una categoria per espanderla
                                     </div>
+                                    <div class="text-xs text-purple-600 mt-2 font-mono">
+                                        DEBUG: expandedCategories = ${JSON.stringify(this.state.expandedCategories)}
+                                    </div>
                                 </div>
 
                                 <!-- Lista categorie -->
                                 <div class="p-4 space-y-3">
                                     ${Object.entries(this.menuCategories).map(([category, items]) => {
-                                        const isExpanded = this.state.expandedCategories[category];
+                                        const isExpanded = this.state.expandedCategories[category] || false;
                                         const itemCount = items.length;
+                                        
+                                        logDebug(`📂 Rendering categoria "${category}"`, { isExpanded, itemCount });
                                         
                                         return `
                                             <div class="border border-gray-200 rounded-lg overflow-hidden">
                                                 <!-- Header categoria cliccabile -->
-                                                <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}'))" 
+                                                <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}');" 
                                                      class="flex justify-between items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 cursor-pointer hover:from-blue-50 hover:to-blue-100 transition-all border-b ${isExpanded ? 'border-gray-300' : ''}">
                                                     <div class="flex items-center gap-3">
                                                         <span class="text-lg transition-transform ${isExpanded ? 'rotate-90' : ''}">
@@ -1227,6 +560,9 @@
                                                         <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                                             ${itemCount} articoli
                                                         </span>
+                                                        <span class="px-2 py-1 ${isExpanded ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded-full text-xs font-mono">
+                                                            ${isExpanded ? 'APERTA' : 'CHIUSA'}
+                                                        </span>
                                                     </div>
                                                     <div class="text-sm text-gray-500">
                                                         ${isExpanded ? 'Clicca per chiudere' : 'Clicca per aprire'}
@@ -1235,7 +571,10 @@
 
                                                 <!-- Lista articoli (visibile solo se espansa) -->
                                                 ${isExpanded ? `
-                                                    <div class="bg-white">
+                                                    <div class="bg-white border-2 border-green-200">
+                                                        <div class="p-2 bg-green-50 text-green-800 text-xs font-bold">
+                                                            ✅ CATEGORIA ESPANSA - ARTICOLI VISIBILI
+                                                        </div>
                                                         ${items.map(item => `
                                                             <div onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" 
                                                                  class="flex justify-between items-start p-4 hover:bg-blue-50 hover:border-l-4 hover:border-blue-500 cursor-pointer transition-all border-b border-gray-100 last:border-b-0">
@@ -1259,7 +598,11 @@
                                                             </div>
                                                         `).join('')}
                                                     </div>
-                                                ` : ''}
+                                                ` : `
+                                                    <div class="bg-red-50 p-2 text-red-800 text-xs font-bold">
+                                                        ❌ CATEGORIA CHIUSA - ARTICOLI NASCOSTI
+                                                    </div>
+                                                `}
                                             </div>
                                         `;
                                     }).join('')}
@@ -1269,7 +612,7 @@
                                 <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 shadow-sm">
                                     <div class="text-center text-sm text-gray-600">
                                         📊 ${categories.length} categorie • ${Object.values(this.menuCategories).reduce((sum, items) => sum + items.length, 0)} articoli totali
-                                        ${hasExpandedCategories ? `<br/>🔓 ${Object.values(this.state.expandedCategories).filter(expanded => expanded).length} categorie aperte` : ''}
+                                        <br/>🔓 ${Object.values(this.state.expandedCategories).filter(expanded => expanded).length} categorie aperte
                                     </div>
                                 </div>
                             </div>
@@ -1290,13 +633,10 @@
                                                 <div class="flex-1">
                                                     <div class="font-medium">${item.name}</div>
                                                     <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
-                                                    ${item.ingredients ? `<div class="text-xs text-gray-500 mt-1">🧄 ${item.ingredients.replace(/\n/g, ', ')}</div>` : ''}
                                                 </div>
                                                 
                                                 <div class="flex items-center gap-3">
-                                                    <button onclick="app.removeFromOrder(${item.id})" class="w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full text-red-600 transition-colors">−</button>
                                                     <span class="font-bold w-8 text-center">${item.quantity}</span>
-                                                    <button onclick="app.addToOrder({id:${item.id},name:'${item.name.replace(/'/g, "\\'")}',price:${item.price},ingredients:'${item.ingredients ? item.ingredients.replace(/'/g, "\\'") : ''}',description:'${item.description ? item.description.replace(/'/g, "\\'") : ''}'})" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600 transition-colors">+</button>
                                                     <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
                                                 </div>
                                             </div>
@@ -1307,9 +647,6 @@
                                                 <span>💰 Totale:</span>
                                                 <span class="text-green-600">€${this.calculateTotal().toFixed(2)}</span>
                                             </div>
-                                            <div class="text-sm text-gray-600 mt-1 text-center">
-                                                ${currentOrder.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello
-                                            </div>
                                         </div>
                                     </div>
                                 `}
@@ -1319,95 +656,111 @@
                 `;
             }
             
+            calculateTotal() {
+                return this.getCurrentOrder().reduce((total, item) => total + (item.price * item.quantity), 0);
+            }
+            
             renderKitchenView() {
                 return `
                     <div class="p-6 bg-gray-900 min-h-screen text-white">
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h1 class="text-3xl font-bold">👨‍🍳 Dashboard Cucina</h1>
-                                <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus} • Real-time sync attivo</div>
+                                <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus}</div>
                             </div>
                             <div class="flex gap-3">
-                                <div class="bg-red-600 px-4 py-2 rounded-lg">
-                                    <span class="font-bold">Ordini Attivi: ${this.state.activeOrders.length}</span>
-                                </div>
                                 <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ✕ Torna ai Tavoli
                                 </button>
                             </div>
                         </div>
                         
-                        ${this.state.activeOrders.length === 0 ? `
-                            <div class="text-center text-gray-400 mt-20">
-                                <div class="text-6xl mb-4">🍽️</div>
-                                <p class="text-xl">Nessun ordine in preparazione</p>
-                                <p class="text-gray-500">Gli ordini appariranno qui quando vengono inviati</p>
-                            </div>
-                        ` : `
-                            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                ${this.state.activeOrders.map(order => {
-                                    const table = this.tables.find(t => t.id === order.tableNumber);
-                                    
-                                    return `
-                                        <div class="rounded-lg p-6 border-2 ${order.isModified ? 'bg-yellow-800 border-yellow-400 ring-2 ring-yellow-400' : 'bg-orange-800 border-orange-400'}">
-                                            <div class="flex justify-between items-start mb-4">
-                                                <div>
-                                                    <h3 class="text-2xl font-bold">Tavolo ${table?.number}</h3>
-                                                    <p class="text-sm opacity-75">${new Date(order.timestamp).toLocaleTimeString('it-IT')}</p>
-                                                    ${order.isModified ? `<div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">⚠️ ORDINE MODIFICATO v.${order.version}</div>` : ''}
-                                                </div>
-                                                <div class="text-right">
-                                                    <div class="text-2xl font-bold">€${order.total.toFixed(2)}</div>
-                                                    <div class="text-sm opacity-75">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="space-y-2 mb-4">
-                                                ${order.items.map(item => `
-                                                    <div class="flex justify-between">
-                                                        <span class="font-medium">${item.quantity}x ${item.name}</span>
-                                                        <span>€${(item.price * item.quantity).toFixed(2)}</span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                            
-                                            <button onclick="app.closeOrderFromKitchen(${order.id})" class="w-full bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold">
-                                                💰 Cliente ha Pagato - Libera Tavolo
-                                            </button>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        `}
+                        <div class="text-center text-gray-400 mt-20">
+                            <div class="text-6xl mb-4">🍽️</div>
+                            <p class="text-xl">Nessun ordine in preparazione</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderHistoryView() {
+                return `
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h1 class="text-2xl font-bold text-gray-800">Storico Ordini</h1>
+                            <button onclick="app.setState({currentView: 'tables'})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                ✕ Chiudi
+                            </button>
+                        </div>
+                        
+                        <div class="text-center text-gray-500 mt-12">
+                            <div class="text-6xl mb-4">🕐</div>
+                            <p>Nessun ordine chiuso</p>
+                        </div>
                     </div>
                 `;
             }
             
             selectTable(tableId) {
-                const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
-                if (activeOrder) {
-                    this.closeOrderFromWaiter(tableId);
-                } else {
-                    this.setState({ selectedTable: tableId, currentView: 'menu' });
-                }
+                logDebug('🏠 Tavolo selezionato', tableId);
+                this.setState({ selectedTable: tableId, currentView: 'menu' });
             }
         }
+        
+        // ✅ FUNZIONI GLOBALI SEMPLIFICATE
+        window.toggleCategory = function(category) {
+            logDebug('🌐 toggleCategory globale chiamata', category);
+            if (window.app && window.app.toggleCategory) {
+                window.app.toggleCategory(category);
+            } else {
+                logDebug('❌ App non disponibile per toggleCategory');
+            }
+        };
+        
+        window.expandAll = function() {
+            logDebug('🌐 expandAll globale chiamata');
+            if (window.app && window.app.expandAllCategories) {
+                window.app.expandAllCategories();
+            } else {
+                logDebug('❌ App non disponibile per expandAll');
+            }
+        };
+        
+        window.collapseAll = function() {
+            logDebug('🌐 collapseAll globale chiamata');
+            if (window.app && window.app.collapseAllCategories) {
+                window.app.collapseAllCategories();
+            } else {
+                logDebug('❌ App non disponibile per collapseAll');
+            }
+        };
         
         // Inizializza l'app quando Firebase è pronto
         window.addEventListener('firebaseReady', () => {
             setTimeout(() => {
+                logDebug('🚀 Inizializzando app dopo Firebase ready');
                 const app = new ZenzoBarApp();
                 window.app = app;
-                console.log('✅ ZenzoBar App inizializzata correttamente!');
+                logDebug('✅ ZenzoBar App inizializzata e assegnata a window.app!');
+                
+                // Test immediato
+                setTimeout(() => {
+                    logDebug('🧪 TEST: Espandendo tutte le categorie automaticamente in 2 secondi...');
+                    if (window.app.expandAllCategories) {
+                        window.app.expandAllCategories();
+                        logDebug('✅ Test expand completato');
+                    }
+                }, 2000);
             }, 500);
         });
         
         // Fallback se Firebase non si carica entro 3 secondi
         setTimeout(() => {
             if (!window.app) {
-                console.log('⚠️ Inizializzazione app con fallback...');
+                logDebug('⚠️ Inizializzazione app con fallback...');
                 const app = new ZenzoBarApp();
                 window.app = app;
+                logDebug('✅ App inizializzata con fallback');
             }
         }, 3000);
     </script>
