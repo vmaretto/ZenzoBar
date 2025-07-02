@@ -397,10 +397,12 @@
             }
             
             toggleCategory(category) {
+                console.log('🔄 Toggle categoria:', category);
                 const newExpandedCategories = {
                     ...this.state.expandedCategories,
                     [category]: !this.state.expandedCategories[category]
                 };
+                console.log('📂 Nuove categorie espanse:', newExpandedCategories);
                 this.setState({ expandedCategories: newExpandedCategories });
             }
 
