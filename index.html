@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>ZenzoBar Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -732,7 +732,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800">Storico Ordini Chiusi</h1>
-                <div class="flex gap-3">
+                <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
                     <button onclick="app.exportOrderHistoryCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                         📤 Esporta in CSV
                     </button>
@@ -746,7 +746,9 @@ const dateKey = ts.toLocaleDateString('it-IT');
                 <div class="text-center text-gray-500 mt-12">
                     <div class="text-6xl mb-4">🕐</div>
                     <p>Nessun ordine chiuso oggi</p>
-                    <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
+                    <p class="text-base md:text-sm text-gray-400 mt-2 px-2 text-center md:text-left leading-snug">
+  Gli ordini pagati appariranno qui
+</p>
                 </div>
             ` : `
                 <div class="space-y-8">
@@ -813,7 +815,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                     ${this.state.syncStatus} • Multi-Device Ready
                                 </div>
                             </div>
-                            <div class="flex gap-3">
+                            <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
                                 <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                     👨‍🍳 Cucina
                                     ${this.state.activeOrders.length > 0 ? 
@@ -856,7 +858,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                             <div class="flex">
                                 <div class="flex-shrink-0">🔥</div>
                                 <div class="ml-3">
-                                    <p class="text-sm">
+                                   <p class="text-base md:text-sm leading-snug">
                                         <strong>Firebase Real-Time attivo!</strong><br/>
                                         Sincronizzazione multi-device funzionante. Ora con supporto per note e ordini liberi!
                                     </p>
@@ -867,7 +869,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                         <div class="bg-white rounded-lg p-8 shadow-sm border">
                             <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
                             
-                            <div class="grid gap-4 justify-center" style="grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto;">
+                            <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-full px-2 sm:px-0 justify-center">
                                 ${this.tables.map(table => {
                                     const hasDraftOrder = this.state.orders[table.id]?.length > 0;
                                     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
@@ -884,7 +886,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                     }
                                     
                                     return `
-                                        <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-lg ${bgColor} hover:border-blue-400">
+                                        <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 active:scale-95 hover:shadow-lg ${bgColor} hover:border-blue-400">
                                             <div class="font-bold text-lg">${table.number}</div>
                                             <div class="text-xs flex items-center gap-1 opacity-80">
                                                 👥 ${table.seats}
@@ -1028,8 +1030,12 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                     <div class="text-center text-gray-500 mt-8">
                                         <div class="text-4xl mb-4">📋</div>
                                         <p class="text-lg">Seleziona gli articoli dal menu</p>
-                                        <p class="text-sm text-gray-400 mt-2">📝 Clicca l'icona nota per personalizzare</p>
-                                        <p class="text-sm text-gray-400 mt-1">🆓 Usa "Ordine Libero" per articoli non in menu</p>
+                                        <p class="text-base md:text-sm text-gray-500 mt-2 px-2 text-center md:text-left leading-snug">
+  📝 Clicca l'icona nota per personalizzare
+</p>
+                                        <p class="text-base md:text-sm text-gray-500 mt-1 px-2 text-center md:text-left leading-snug">
+  🆓 Usa "Ordine Libero" per articoli non in menu
+</p>
                                     </div>
                                 ` : `
                                     <div class="space-y-3">
@@ -1088,7 +1094,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                 <h1 class="text-3xl font-bold">👨‍🍳 Dashboard Cucina</h1>
                                 <div class="text-sm text-gray-300 mt-1">${this.state.syncStatus} • Con supporto note e ordini liberi</div>
                             </div>
-                            <div class="flex gap-3">
+                            <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
                                 <div class="bg-red-600 px-4 py-2 rounded-lg">
                                     <span class="font-bold">Ordini Attivi: ${this.state.activeOrders.length}</span>
                                 </div>
@@ -1114,7 +1120,9 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                             <div class="flex justify-between items-start mb-4">
                                                 <div>
                                                     <h3 class="text-2xl font-bold">Tavolo ${table?.number}</h3>
-                                                    <p class="text-sm opacity-75">${new Date(order.timestamp).toLocaleTimeString('it-IT')}</p>
+                                                    <p class="text-base md:text-sm text-gray-500 px-2 text-center md:text-left leading-snug">
+  ${new Date(order.timestamp).toLocaleTimeString('it-IT')}
+</p>
                                                     ${order.isModified ? `<div class="bg-yellow-500 text-black px-2 py-1 rounded text-xs font-bold mt-1">⚠️ ORDINE MODIFICATO v.${order.version}</div>` : ''}
                                                 </div>
                                                 <div class="text-right">
