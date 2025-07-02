@@ -473,12 +473,32 @@
 }
 
             resetTables() {
+    // Avvisa se ci sono ordini attivi
+    const hasActiveOrders = this.state.activeOrders.length > 0;
+    const hasDraftOrders = Object.keys(this.state.orders).length > 0;
+    
+    if (hasActiveOrders || hasDraftOrders) {
+        const confirmMsg = `⚠️ ATTENZIONE!\n\nCi sono ordini aperti o in cucina.\nCambiando il layout potresti perdere questi ordini.\n\nVuoi continuare comunque?`;
+        
+        if (!window.confirm(confirmMsg)) {
+            return; // Annulla l'operazione
+        }
+    }
+    
+    // Reset completo: tavoli, ordini e configurazione
     this.setState({ 
         customTables: [], 
         editingTable: null, 
-        showSettings: false 
+        showSettings: false,
+        orders: {},           // Cancella tutti gli ordini in bozza
+        // Non tocchiamo activeOrders e orderHistory per sicurezza
     });
+    
+    // Aggiorna Firebase
     firebaseService.update('tables', []);
+    firebaseService.update('orders', {});
+    
+    alert(`✅ Layout tavoli aggiornato!\n\nNuovo numero tavoli: ${this.state.tableCount}`);
 }
             
             render() {
