@@ -737,8 +737,20 @@ exportOrderHistoryCSV() {
                                         <div class="flex justify-between items-start mb-3">
                                             <div>
                                                 <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
-                                                <p class="text-gray-600 text-sm">Ordinato: ${new Date(order.timestamp).toLocaleString('it-IT')}</p>
-                                                <p class="text-gray-600 text-sm">Chiuso: ${new Date(order.closedAt).toLocaleString('it-IT')}</p>
+                                                <p class="text-gray-600 text-sm">
+  Ordinato: ${
+    order.timestamp
+      ? new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp).toLocaleString('it-IT')
+      : '—'
+  }
+</p>
+<p class="text-gray-600 text-sm">
+  Chiuso: ${
+    order.closedAt
+      ? new Date(order.closedAt?.seconds ? order.closedAt.seconds * 1000 : order.closedAt).toLocaleString('it-IT')
+      : '—'
+  }
+</p>
                                                 <p class="text-blue-600 text-sm font-medium">
                                                     Incassato da: ${order.closedBy === 'kitchen' ? '👨‍🍳 Cucina' : '👤 Cameriere'}
                                                 </p>
