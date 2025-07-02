@@ -834,37 +834,31 @@ const dateKey = ts.toLocaleDateString('it-IT');
                         
                         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
                         ${this.state.showSettings ? `
-    <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-        <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
+<div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
+    <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
 
-        <div class="flex items-center gap-4 mb-6">
-            <label class="font-medium">Numero di tavoli:</label>
-            <input type="number" min="1" max="20" value="${this.state.tableCount}" 
-                   onchange="app.setState({tableCount: parseInt(this.value) || 1})"
-                   class="border rounded px-3 py-2 w-20">
-            <button onclick="app.applyTableLayout()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                📐 Applica Layout
-            </button>
-            <button onclick="app.resetTables()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                🔄 Reset Completo
-            </button>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3 mb-4">
+        <label class="font-medium text-sm">Numero di tavoli:</label>
+        <input type="number" min="1" max="20" value="${this.state.tableCount}" 
+               onchange="app.setState({tableCount: parseInt(this.value) || 1})"
+               class="border rounded px-3 py-2 w-full sm:w-20">
+    </div>
 
-        <button onclick="app.setState({showSettings: false})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-            Chiudi Configurazione
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <button onclick="app.applyTableLayout()" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+            📐 Applica Layout
+        </button>
+        <button onclick="app.resetTables()" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+            🔄 Reset Completo
         </button>
     </div>
+
+    <button onclick="app.setState({showSettings: false})" class="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm">
+        Chiudi Configurazione
+    </button>
+</div>
 ` : ''}
-                            <div class="flex">
-                                <div class="flex-shrink-0">🔥</div>
-                                <div class="ml-3">
-                                   <p class="text-base md:text-sm leading-snug">
-                                        <strong>Firebase Real-Time attivo!</strong><br/>
-                                        Sincronizzazione multi-device funzionante. Ora con supporto per note e ordini liberi!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        
                         
                         <div class="bg-white rounded-lg p-8 shadow-sm border">
                             <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
