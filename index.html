@@ -556,7 +556,7 @@
                         tableNumber: this.state.selectedTable,
                         items: [...currentOrder],
                         total: this.calculateTotal(),
-                        timestamp: new Date(),
+                        timestamp: Date.now(),
                         state: 'sent',
                         isModified: false,
                         version: 1
@@ -622,7 +622,7 @@
                 const closedOrder = {
                     ...orderToClose,
                     state: 'paid',
-                    closedAt: new Date(),
+                    closedAt: Date.now(),
                     closedBy: 'kitchen'
                 };
                 
@@ -657,7 +657,7 @@
                 const closedOrder = {
                     ...orderToClose,
                     state: 'paid',
-                    closedAt: new Date(),
+                   closedAt: Date.now(),
                     closedBy: 'waiter'
                 };
                 
@@ -700,7 +700,8 @@ exportOrderHistoryCSV() {
             
             renderHistoryView() {
     const groupedByDate = this.state.orderHistory.reduce((acc, order) => {
-        const dateKey = new Date(order.timestamp).toLocaleDateString('it-IT');
+        const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
+const dateKey = ts.toLocaleDateString('it-IT');
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(order);
         return acc;
