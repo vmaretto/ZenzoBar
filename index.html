@@ -914,7 +914,97 @@
                                                                 <div class="flex-1 cursor-pointer" onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})">
                                                                     <div class="font-medium text-gray-900">${item.name}</div>
                                                                     <div class="text-green-600 font-bold text-lg">€${item.price.toFixed(2)}</div>
-                                                                    ${item.ingredients ? `
+                                                                    ${item.description ? `
+                                                                        <div class="text-xs text-gray-500 mt-1 italic leading-relaxed">
+                                                                            💭 ${item.description.replace(/\n/g, ' ')}
+                                                                        </div>
+                                                                    ` : ''}
+                                                                </div>
+                                                                <div class="ml-3 flex-shrink-0 flex flex-col gap-2">
+                                                                    <button onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-green-100 hover:bg-green-200 rounded-full transition-colors">
+                                                                        <span class="text-green-600 font-bold">+</span>
+                                                                    </button>
+                                                                    <button onclick="app.showNoteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors" title="Aggiungi con nota">
+                                                                        <span class="text-blue-600 font-bold">📝</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+
+                                <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 shadow-sm">
+                                    <div class="text-center text-sm text-gray-600">
+                                        📊 ${categories.length} categorie • ${Object.values(this.menuCategories).reduce((sum, items) => sum + items.length, 0)} articoli totali
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-1/2 bg-white p-4 overflow-y-auto">
+                                <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
+                                
+                                ${currentOrder.length === 0 ? `
+                                    <div class="text-center text-gray-500 mt-8">
+                                        <div class="text-4xl mb-4">📋</div>
+                                        <p class="text-lg">Seleziona gli articoli dal menu</p>
+                                        <p class="text-sm text-gray-400 mt-2">📝 Clicca l'icona nota per personalizzare</p>
+                                        <p class="text-sm text-gray-400 mt-1">🆓 Usa "Ordine Libero" per articoli non in menu</p>
+                                        ${isModifying ? `<p class="text-sm text-yellow-600 mt-2 font-medium">✏️ In modalità modifica - cancella tutto per annullare</p>` : ''}
+                                    </div>
+                                ` : `
+                                    <div class="space-y-3">
+                                        ${currentOrder.map((item, index) => `
+                                            <div class="flex justify-between items-start p-3 ${item.isFromActiveOrder ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50'} rounded-lg border">
+                                                <div class="flex-1">
+                                                    <div class="font-medium">${item.name}</div>
+                                                    <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
+                                                    ${item.isFreeOrder ? `<div class="text-xs text-purple-600 font-medium">🆓 Ordine libero</div>` : ''}
+                                                    ${item.isFromActiveOrder ? `<div class="text-xs text-yellow-700 font-medium">🔄 Dall'ordine in cucina</div>` : ''}
+                                                    ${item.ingredients ? `<div class="text-xs text-gray-500 mt-1">🧄 ${item.ingredients.replace(/\n/g, ', ')}</div>` : ''}
+                                                    ${item.note ? `
+                                                        <div class="text-xs text-blue-600 mt-1 font-medium bg-blue-50 p-1 rounded">
+                                                            📝 ${item.note}
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                
+                                                <div class="flex items-center gap-2 ml-3">
+                                                    <div class="flex flex-col gap-1">
+                                                        <button onclick="app.removeFromOrder(${index})" class="w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full text-red-600 transition-colors">−</button>
+                                                        ${item.note || item.isFreeOrder ? `
+                                                            <button onclick="app.showNoteModal(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')}, ${index})" class="w-8 h-8 flex items-center justify-center bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 transition-colors" title="Modifica nota">
+                                                                📝
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                    <span class="font-bold w-8 text-center">${item.quantity}</span>
+                                                    <button onclick="app.addToOrder(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')})" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600 transition-colors">+</button>
+                                                    <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                        
+                                        <div class="border-t pt-3 mt-4 ${isModifying ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50'} rounded-lg p-4">
+                                            <div class="flex justify-between items-center text-xl font-bold">
+                                                <span>💰 Totale:</span>
+                                                <span class="${isModifying ? 'text-orange-600' : 'text-green-600'}">€${this.calculateTotal().toFixed(2)}</span>
+                                            </div>
+                                            <div class="text-sm text-gray-600 mt-1 text-center">
+                                                ${currentOrder.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello
+                                                ${isModifying ? `<br/><span class="text-yellow-700 font-medium">Differenza: €${(this.calculateTotal() - (existingOrder?.total || 0)).toFixed(2)}</span>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }ingredients ? `
                                                                         <div class="text-xs text-gray-600 mt-1 leading-relaxed">
                                                                             <span class="font-medium">🧄 Ingredienti:</span> ${item.ingredients.replace(/\n/g, ', ')}
                                                                         </div>
