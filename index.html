@@ -353,6 +353,7 @@ const aiService = new AIAnalyticsService();
                     currentNoteItem: null,
                     currentNoteIndex: null,
                     aiAnalysis: null,
+                    activeTab: 'menu', 
                     showAIModal: false
                 };
                 
@@ -1161,66 +1162,93 @@ const dateKey = ts.toLocaleDateString('it-IT');
     const categories = Object.keys(this.menuCategories);
 
     return `
-        <div class="flex flex-col h-screen bg-gray-50 overflow-hidden">
+        <div class="flex flex-col h-screen bg-gray-50">
+
             <!-- Header -->
-            <div class="bg-white shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="bg-white shadow-sm p-4 flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
                 <div class="flex items-center gap-3">
                     <button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg">✕</button>
                     <h1 class="text-xl font-bold">Tavolo ${table?.number}</h1>
                 </div>
-                <div class="flex gap-3 flex-wrap justify-end">
+                <div class="flex flex-wrap gap-2 md:gap-4 justify-end">
                     ${currentOrder.length > 0 ? `
                         <div class="text-lg font-bold text-green-600">€${this.calculateTotal().toFixed(2)}</div>
-                        <button onclick="app.printOrder()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm flex items-center gap-1">
+                        <button onclick="app.printOrder()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
                             🖨️ Invia in Cucina
-                        </button>` : ''}
-                    <button onclick="app.showFreeOrderModal()" class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm flex items-center gap-1">
+                        </button>
+                    ` : ''}
+                    <button onclick="app.showFreeOrderModal()" class="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
                         🆓 Ordine Libero
                     </button>
                 </div>
             </div>
 
-            <!-- Contenuto principale -->
-            <div class="flex flex-1 overflow-hidden">
+            <!-- Tabs (solo mobile) -->
+            <div class="flex md:hidden justify-center gap-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+                <button onclick="app.setState({ activeTab: 'menu' })"
+                    class="${this.state.activeTab === 'menu' ? 'border-b-4 border-blue-500 text-blue-600' : 'text-gray-500'} w-1/2 py-2 text-center font-bold text-sm transition-colors">
+                    📋 Menu
+                </button>
+                <button onclick="app.setState({ activeTab: 'order' })"
+                    class="${this.state.activeTab === 'order' ? 'border-b-4 border-blue-500 text-blue-600' : 'text-gray-500'} w-1/2 py-2 text-center font-bold text-sm transition-colors">
+                    🛒 Ordine
+                </button>
+            </div>
+
+            <!-- Main content -->
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
+
                 <!-- Menu -->
-                <div class="w-full md:w-2/3 overflow-y-auto border-r border-gray-200">
-                    <div class="sticky top-0 z-10 bg-white border-b p-4 shadow-sm">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-lg font-bold">📋 Menu</h2>
+                <div class="w-full md:w-1/2 overflow-y-auto"
+                    style="display: ${this.state.activeTab === 'menu' || window.innerWidth >= 768 ? 'block' : 'none'};">
+                    
+                    <!-- Menu Header -->
+                    <div class="sticky top-0 bg-white border-b-2 border-gray-200 p-4 shadow-sm z-10">
+                        <div class="flex justify-between items-center mb-3">
+                            <h2 class="text-lg font-bold text-gray-800">📋 Menu</h2>
                             <div class="flex gap-2">
-                                <button onclick="app.expandAllCategories()" class="px-2 py-1 text-xs bg-blue-600 text-white rounded">📂 Espandi</button>
-                                <button onclick="app.collapseAllCategories()" class="px-2 py-1 text-xs bg-gray-600 text-white rounded">📁 Chiudi</button>
+                                <button onclick="app.expandAllCategories()" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">📂 Espandi</button>
+                                <button onclick="app.collapseAllCategories()" class="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">📁 Chiudi</button>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-500 mt-1">👆 Tocca una categoria per espanderla • 📝 per note • 🆓 per extra</p>
+                        <div class="text-sm text-gray-600">👆 Clicca su una categoria per espanderla • 📝 per note • 🆓 per ordini liberi</div>
                     </div>
 
-                    <div class="p-4 space-y-4">
+                    <!-- Categorie -->
+                    <div class="p-4 space-y-3">
                         ${Object.entries(this.menuCategories).map(([category, items]) => {
                             const isExpanded = this.state.expandedCategories[category];
+                            const itemCount = items.length;
+
                             return `
-                                <div class="border rounded overflow-hidden">
-                                    <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}')" class="flex justify-between items-center p-3 bg-gray-50 hover:bg-blue-50 cursor-pointer">
-                                        <div class="flex items-center gap-2">
-                                            <span>${isExpanded ? '🔽' : '▶️'}</span>
-                                            <h3 class="font-bold">${category}</h3>
-                                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${items.length} articoli</span>
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div onclick="app.toggleCategory('${category.replace(/'/g, "\\'")}')"
+                                        class="flex justify-between items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 cursor-pointer hover:from-blue-50 hover:to-blue-100 transition-all border-b ${isExpanded ? 'border-gray-300' : ''}">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-lg transition-transform ${isExpanded ? 'rotate-90' : ''}">▶️</span>
+                                            <h3 class="font-bold text-lg text-gray-800">${category}</h3>
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">${itemCount} articoli</span>
                                         </div>
-                                        <span class="text-sm text-gray-500">${isExpanded ? 'Chiudi' : 'Apri'}</span>
+                                        <div class="text-sm text-gray-500">${isExpanded ? 'Chiudi' : 'Apri'}</div>
                                     </div>
+
                                     ${isExpanded ? `
                                         <div class="bg-white">
                                             ${items.map(item => `
-                                                <div class="flex justify-between items-start p-3 hover:bg-blue-50 border-t">
+                                                <div class="flex justify-between items-start p-4 hover:bg-blue-50 hover:border-l-4 hover:border-blue-500 transition-all border-b border-gray-100 last:border-b-0">
                                                     <div class="flex-1 cursor-pointer" onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                                                        <div class="font-medium">${item.name}</div>
-                                                        <div class="text-green-600 font-bold">€${item.price.toFixed(2)}</div>
-                                                        ${item.ingredients ? `<div class="text-xs text-gray-500 mt-1">🧄 ${item.ingredients}</div>` : ''}
-                                                        ${item.description ? `<div class="text-xs italic text-gray-400 mt-1">💭 ${item.description}</div>` : ''}
+                                                        <div class="font-medium text-gray-900">${item.name}</div>
+                                                        <div class="text-green-600 font-bold text-lg">€${item.price.toFixed(2)}</div>
+                                                        ${item.ingredients ? `<div class="text-xs text-gray-600 mt-1 leading-relaxed">🧄 ${item.ingredients.replace(/\n/g, ', ')}</div>` : ''}
+                                                        ${item.description ? `<div class="text-xs text-gray-500 mt-1 italic">💭 ${item.description.replace(/\n/g, ' ')}</div>` : ''}
                                                     </div>
-                                                    <div class="flex flex-col gap-2 ml-2">
-                                                        <button onclick="event.stopPropagation(); app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 font-bold rounded-full flex items-center justify-center">+</button>
-                                                        <button onclick="event.stopPropagation(); app.showNoteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-8 h-8 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full flex items-center justify-center">📝</button>
+                                                    <div class="ml-3 flex-shrink-0 flex flex-col gap-2">
+                                                        <button onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-green-100 hover:bg-green-200 rounded-full">
+                                                            <span class="text-green-600 font-bold">+</span>
+                                                        </button>
+                                                        <button onclick="app.showNoteModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="flex items-center justify-center w-8 h-8 bg-blue-100 hover:bg-blue-200 rounded-full">
+                                                            <span class="text-blue-600 font-bold">📝</span>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -1233,36 +1261,46 @@ const dateKey = ts.toLocaleDateString('it-IT');
                 </div>
 
                 <!-- Ordine Corrente -->
-                <div class="w-full md:w-1/3 overflow-y-auto bg-white p-4">
+                <div class="w-full md:w-1/2 overflow-y-auto bg-white p-4 border-t md:border-t-0 md:border-l border-gray-200"
+                    style="display: ${this.state.activeTab === 'order' || window.innerWidth >= 768 ? 'block' : 'none'};">
                     <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
                     ${currentOrder.length === 0 ? `
-                        <div class="text-center text-gray-400 mt-8">
-                            <div class="text-3xl mb-2">📋</div>
-                            <p>Ancora nessun articolo selezionato</p>
+                        <div class="text-center text-gray-500 mt-8">
+                            <div class="text-4xl mb-4">📋</div>
+                            <p class="text-lg">Seleziona gli articoli dal menu</p>
+                            <p class="text-sm text-gray-400 mt-2">📝 Personalizza con note</p>
+                            <p class="text-sm text-gray-400 mt-1">🆓 Usa "Ordine Libero" per articoli non in menu</p>
                         </div>
                     ` : `
                         <div class="space-y-3">
                             ${currentOrder.map((item, index) => `
-                                <div class="border p-3 rounded bg-gray-50">
-                                    <div class="flex justify-between">
-                                        <div>
-                                            <div class="font-medium">${item.name}</div>
-                                            <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
-                                            ${item.ingredients ? `<div class="text-xs text-gray-500">🧄 ${item.ingredients}</div>` : ''}
-                                            ${item.note ? `<div class="text-xs text-blue-600 bg-blue-50 mt-1 rounded p-1">📝 ${item.note}</div>` : ''}
-                                            ${item.isFreeOrder ? `<div class="text-xs text-purple-600 font-medium">🆓 Ordine libero</div>` : ''}
+                                <div class="flex justify-between items-start p-3 bg-gray-50 rounded-lg border">
+                                    <div class="flex-1">
+                                        <div class="font-medium">${item.name}</div>
+                                        <div class="text-sm text-gray-600">€${item.price.toFixed(2)} cad.</div>
+                                        ${item.isFreeOrder ? `<div class="text-xs text-purple-600 font-medium">🆓 Ordine libero</div>` : ''}
+                                        ${item.ingredients ? `<div class="text-xs text-gray-500 mt-1">🧄 ${item.ingredients}</div>` : ''}
+                                        ${item.note ? `<div class="text-xs text-blue-600 mt-1 font-medium bg-blue-50 p-1 rounded">📝 ${item.note}</div>` : ''}
+                                    </div>
+                                    <div class="flex items-center gap-2 ml-3">
+                                        <div class="flex flex-col gap-1">
+                                            <button onclick="app.removeFromOrder(${index})" class="w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-200 rounded-full text-red-600">−</button>
+                                            ${(item.note || item.isFreeOrder) ? `<button onclick="app.showNoteModal(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')}, ${index})" class="w-8 h-8 flex items-center justify-center bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600">📝</button>` : ''}
                                         </div>
-                                        <div class="flex flex-col items-end gap-1">
-                                            <button onclick="app.removeFromOrder(${index})" class="w-6 h-6 bg-red-100 hover:bg-red-200 rounded-full text-red-600 flex items-center justify-center">−</button>
-                                            <span class="font-bold text-center">${item.quantity}</span>
-                                            <button onclick="app.addToOrder(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')})" class="w-6 h-6 bg-green-100 hover:bg-green-200 rounded-full text-green-600 flex items-center justify-center">+</button>
-                                        </div>
+                                        <span class="font-bold w-8 text-center">${item.quantity}</span>
+                                        <button onclick="app.addToOrder(${JSON.stringify({id:item.id,name:item.name,price:item.price}).replace(/"/g, '&quot;')})" class="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-full text-green-600">+</button>
+                                        <div class="font-bold text-green-600 w-16 text-right">€${(item.price * item.quantity).toFixed(2)}</div>
                                     </div>
                                 </div>
                             `).join('')}
-                            <div class="mt-4 bg-green-50 p-4 rounded-lg text-xl font-bold flex justify-between">
-                                <span>💰 Totale:</span>
-                                <span class="text-green-600">€${this.calculateTotal().toFixed(2)}</span>
+                            <div class="border-t pt-3 mt-4 bg-green-50 rounded-lg p-4">
+                                <div class="flex justify-between items-center text-xl font-bold">
+                                    <span>💰 Totale:</span>
+                                    <span class="text-green-600">€${this.calculateTotal().toFixed(2)}</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1 text-center">
+                                    ${currentOrder.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello
+                                </div>
                             </div>
                         </div>
                     `}
@@ -1271,6 +1309,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
         </div>
     `;
 }
+
 
             renderKitchenView() {
                 return `
