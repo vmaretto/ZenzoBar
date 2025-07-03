@@ -418,29 +418,21 @@ const aiService = new AIAnalyticsService();
             setState(newState) {
     console.log('🔄 setState chiamata', Object.keys(newState));
 
+    const scrollContainers = document.querySelectorAll('.menu-scrollable');
+    const scrollTops = Array.from(scrollContainers).map(sc => sc.scrollTop);
+
     const oldExpandedCategories = this.state.expandedCategories;
-
-    // Trova contenitore scrollabile (dove avviene lo scroll)
-    
-
-                const scrollContainer = document.querySelector('.overflow-y-auto');
-const scrollTop = scrollContainer?.scrollTop || 0;
-
-
     this.state = { ...this.state, ...newState };
-
     if (!newState.hasOwnProperty('expandedCategories')) {
         this.state.expandedCategories = oldExpandedCategories;
     }
 
     this.render();
 
-                if (scrollContainer) scrollContainer.scrollTop = scrollTop;
-
-    // Ripristina scroll
-    if (scrollContainer) {
-        scrollContainer.scrollTop = scrollTop;
-    }
+    // 🔄 Ripristina scroll solo dove serviva
+    scrollContainers.forEach((sc, i) => {
+        sc.scrollTop = scrollTops[i];
+    });
 }
             
             render() {
@@ -1199,7 +1191,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
 
                 <!-- Menu -->
-                <div class="w-full md:w-1/2 overflow-y-auto"
+               <div class="w-full md:w-1/2 overflow-y-auto menu-scrollable"
                     style="display: ${this.state.activeTab === 'menu' || window.innerWidth >= 768 ? 'block' : 'none'};">
                     
                     <!-- Menu Header -->
