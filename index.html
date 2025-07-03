@@ -852,34 +852,36 @@ console.log('🧪 addToOrder - scroll check start', document.querySelector('.men
                 this.setState({ expandedCategories: {} });
             }
 
-            closeOrderFromKitchen(orderId) {
-                const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == orderToClose.tableNumber);
+           closeOrderFromKitchen(orderId) {
+    const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
 
-if (ordersToClose.length === 0) {
-    alert('❌ Ordine non trovato!');
-    return;
+    if (!orderToClose) {
+        alert('❌ Ordine non trovato!');
+        return;
+    }
+
+    const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == orderToClose.tableNumber);
+
+    const closedOrders = ordersToClose.map(o => ({
+        ...o,
+        state: 'paid',
+        closedAt: Date.now(),
+        closedBy: 'kitchen'
+    }));
+
+    const updatedHistory = [...closedOrders, ...this.state.orderHistory];
+    const updatedActiveOrders = this.state.activeOrders.filter(order => order.tableNumber !== orderToClose.tableNumber);
+
+    this.setState({
+        orderHistory: updatedHistory,
+        activeOrders: updatedActiveOrders
+    });
+
+    firebaseService.update('orderHistory', updatedHistory);
+    firebaseService.update('activeOrders', updatedActiveOrders);
+
+    alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
 }
-
-const closedOrders = ordersToClose.map(o => ({
-    ...o,
-    state: 'paid',
-    closedAt: Date.now(),
-    closedBy: 'kitchen'
-}));
-
-const updatedHistory = [...closedOrders, ...this.state.orderHistory];
-const updatedActiveOrders = this.state.activeOrders.filter(order => order.tableNumber !== orderToClose.tableNumber);
-
-this.setState({
-    orderHistory: updatedHistory,
-    activeOrders: updatedActiveOrders
-});
-
-firebaseService.update('orderHistory', updatedHistory);
-firebaseService.update('activeOrders', updatedActiveOrders);
-
-alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
-            }
 
             closeOrderFromWaiter(tableNumber) {
                const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == tableNumber);
