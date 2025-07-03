@@ -415,17 +415,22 @@ const aiService = new AIAnalyticsService();
             }
             
             setState(newState) {
-                console.log('🔄 setState chiamata', Object.keys(newState));
-                
-                const oldExpandedCategories = this.state.expandedCategories;
-                this.state = { ...this.state, ...newState };
-                
-                if (!newState.hasOwnProperty('expandedCategories')) {
-                    this.state.expandedCategories = oldExpandedCategories;
-                }
-                
-                this.render();
-            }
+    console.log('🔄 setState chiamata', Object.keys(newState));
+
+    const oldExpandedCategories = this.state.expandedCategories;
+    const scrollY = window.scrollY; // salva posizione scroll corrente
+
+    this.state = { ...this.state, ...newState };
+
+    if (!newState.hasOwnProperty('expandedCategories')) {
+        this.state.expandedCategories = oldExpandedCategories;
+    }
+
+    this.render();
+
+    // ripristina lo scroll
+    window.scrollTo({ top: scrollY });
+}
             
             render() {
                 console.log('🎨 render() chiamata, vista corrente:', this.state.currentView);
@@ -1248,7 +1253,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                 </div>
 
                 <!-- Ordine Corrente -->
-                <div class="w-full md:w-1/2 bg-white p-4 overflow-y-auto">
+               <div class="w-full md:w-1/2 bg-white p-4 overflow-y-auto max-h-[calc(100vh-140px)]">
                     <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
                     ${currentOrder.length === 0 ? `
                         <div class="text-center text-gray-500 mt-8">
