@@ -415,7 +415,7 @@ const aiService = new AIAnalyticsService();
                 }
             }
             
-            setState(newState) {
+           setState(newState) {
     console.log('🔄 setState chiamata', Object.keys(newState));
 
     const scrollContainers = document.querySelectorAll('.menu-scrollable');
@@ -429,10 +429,12 @@ const aiService = new AIAnalyticsService();
 
     this.render();
 
-    // 🔄 Ripristina scroll solo dove serviva
-    scrollContainers.forEach((sc, i) => {
-        sc.scrollTop = scrollTops[i];
-    });
+    // ✅ Ripristina scroll solo se siamo nella vista 'menu'
+    if (this.state.currentView === 'menu') {
+        scrollContainers.forEach((sc, i) => {
+            sc.scrollTop = scrollTops[i];
+        });
+    }
 }
             
             render() {
