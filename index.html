@@ -916,6 +916,8 @@ console.log('🧪 addToOrder - scroll check start', document.querySelector('.men
                 alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
             }
 
+            
+
 exportOrderHistoryCSV() {
     if (!this.state.orderHistory.length) {
         alert('❌ Nessun ordine da esportare!');
@@ -1002,6 +1004,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                                         <div class="flex justify-between items-start mb-3">
                                             <div>
                                                 <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
+                                                 <button onclick="app.deleteOrderFromHistory(${order.id})" class="text-sm text-red-600 hover:underline ml-2">🗑️ Elimina</button>
                                                 <p class="text-gray-600 text-sm">
   Ordinato: ${
     order.timestamp
@@ -1499,6 +1502,8 @@ triggerCSVUpload() {
                                             <div class="flex justify-between items-start mb-4">
                                                 <div>
                                                     <h3 class="text-2xl font-bold">Tavolo ${table?.number}</h3>
+                                                    ${order.label === 'OLD' ? '<span class="ml-2 bg-gray-600 text-white px-2 py-1 rounded text-xs">OLD</span>' : ''}
+
                                                     <p class="text-base md:text-sm text-gray-500 px-2 text-center md:text-left leading-snug">
   ${new Date(order.timestamp).toLocaleTimeString('it-IT')}
 </p>
@@ -1589,6 +1594,12 @@ async resetTables() {
     alert('✅ RESET COMPLETO ESEGUITO!');
 } // ✅ questa parentesi mancava qui!
 
+async deleteOrderFromHistory(orderId) {
+    const updatedHistory = this.state.orderHistory.filter(order => order.id !== orderId);
+    this.setState({ orderHistory: updatedHistory });
+    await firebaseService.update('orderHistory', updatedHistory);
+}
+            
 selectTable(tableId) {
     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
 
@@ -1600,6 +1611,15 @@ selectTable(tableId) {
         } else {
             // Recupera l'ordine attivo per modificarlo
             const draftOrders = { ...this.state.orders };
+
+            // Etichetta il vecchio ordine come "OLD"
+const updatedOldOrder = { ...activeOrder, label: 'OLD' };
+const updatedActiveOrders = this.state.activeOrders.map(o =>
+    o.id === activeOrder.id ? updatedOldOrder : o
+);
+this.setState({ activeOrders: updatedActiveOrders });
+firebaseService.update('activeOrders', updatedActiveOrders);
+            
             draftOrders[tableId] = [...activeOrder.items];
 
             this.setState({
