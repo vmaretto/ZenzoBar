@@ -853,67 +853,65 @@ console.log('🧪 addToOrder - scroll check start', document.querySelector('.men
             }
 
             closeOrderFromKitchen(orderId) {
-                const orderToClose = this.state.activeOrders.find(order => order.id == orderId);
-                
-                if (!orderToClose) {
-                    alert('❌ Ordine non trovato!');
-                    return;
-                }
+                const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == orderToClose.tableNumber);
 
-                const closedOrder = {
-                    ...orderToClose,
-                    state: 'paid',
-                    closedAt: Date.now(),
-                    closedBy: 'kitchen'
-                };
-                
-                const updatedHistory = [closedOrder, ...this.state.orderHistory];
-                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id != orderId);
-                
-                this.setState({ 
-                    orderHistory: updatedHistory,
-                    activeOrders: updatedActiveOrders
-                });
-                
-                firebaseService.update('orderHistory', updatedHistory);
-                firebaseService.update('activeOrders', updatedActiveOrders);
-                
-                alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
+if (ordersToClose.length === 0) {
+    alert('❌ Ordine non trovato!');
+    return;
+}
+
+const closedOrders = ordersToClose.map(o => ({
+    ...o,
+    state: 'paid',
+    closedAt: Date.now(),
+    closedBy: 'kitchen'
+}));
+
+const updatedHistory = [...closedOrders, ...this.state.orderHistory];
+const updatedActiveOrders = this.state.activeOrders.filter(order => order.tableNumber !== orderToClose.tableNumber);
+
+this.setState({
+    orderHistory: updatedHistory,
+    activeOrders: updatedActiveOrders
+});
+
+firebaseService.update('orderHistory', updatedHistory);
+firebaseService.update('activeOrders', updatedActiveOrders);
+
+alert(`✅ Tavolo ${orderToClose.tableNumber} incassato e liberato!`);
             }
 
             closeOrderFromWaiter(tableNumber) {
-                const orderToClose = this.state.activeOrders.find(order => order.tableNumber == tableNumber);
-                
-                if (!orderToClose) {
-                    alert('❌ Nessun ordine attivo per questo tavolo!');
-                    return;
-                }
+               const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == tableNumber);
 
-                const confirmMsg = `⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${orderToClose.total.toFixed(2)}\nArticoli: ${orderToClose.items.reduce((sum, item) => sum + item.quantity, 0)}\n\nClicca OK solo se il cliente ha già pagato.`;
-                
-                if (!window.confirm(confirmMsg)) {
-                    return;
-                }
+if (ordersToClose.length === 0) {
+    alert('❌ Nessun ordine attivo per questo tavolo!');
+    return;
+}
 
-                const closedOrder = {
-                    ...orderToClose,
-                    state: 'paid',
-                   closedAt: Date.now(),
-                    closedBy: 'waiter'
-                };
-                
-                const updatedHistory = [closedOrder, ...this.state.orderHistory];
-                const updatedActiveOrders = this.state.activeOrders.filter(order => order.id !== orderToClose.id);
-                
-                this.setState({
-                    orderHistory: updatedHistory,
-                    activeOrders: updatedActiveOrders
-                });
-                
-                firebaseService.update('orderHistory', updatedHistory);
-                firebaseService.update('activeOrders', updatedActiveOrders);
-                
-                alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
+const conferma = window.confirm(`⚠️ LIBERARE TAVOLO ${tableNumber}?\n\nATTENZIONE: Confermi che il cliente ha PAGATO?\n\nOrdine: €${ordersToClose.reduce((tot, o) => tot + o.total, 0).toFixed(2)}\nArticoli: ${ordersToClose.reduce((tot, o) => tot + o.items.reduce((s, i) => s + i.quantity, 0), 0)}\n\nClicca OK solo se il cliente ha già pagato.`);
+
+if (!conferma) return;
+
+const closedOrders = ordersToClose.map(o => ({
+    ...o,
+    state: 'paid',
+    closedAt: Date.now(),
+    closedBy: 'waiter'
+}));
+
+const updatedHistory = [...closedOrders, ...this.state.orderHistory];
+const updatedActiveOrders = this.state.activeOrders.filter(order => order.tableNumber !== tableNumber);
+
+this.setState({
+    orderHistory: updatedHistory,
+    activeOrders: updatedActiveOrders
+});
+
+firebaseService.update('orderHistory', updatedHistory);
+firebaseService.update('activeOrders', updatedActiveOrders);
+
+alert(`✅ Tavolo ${tableNumber} liberato dal cameriere!`);
             }
 
             
