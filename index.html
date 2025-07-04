@@ -1397,7 +1397,7 @@ triggerCSVUpload() {
                                         <div class="bg-white">
                                             ${items.map(item => `
                                                 <div class="flex justify-between items-start p-4 hover:bg-blue-50 hover:border-l-4 hover:border-blue-500 transition-all border-b border-gray-100 last:border-b-0">
-                                                    <div class="flex-1 cursor-pointer" onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                                                    <div class="flex-1 cursor-pointer" onclick="app.addToOrder(${JSON.stringify(item).replace(/"/g, '&quot;')})" tabindex="-1">
                                                         <div class="font-medium text-gray-900">${item.name}</div>
                                                         <div class="text-green-600 font-bold text-lg">€${item.price.toFixed(2)}</div>
                                                         ${item.ingredients ? `<div class="text-xs text-gray-600 mt-1 leading-relaxed">🧄 ${item.ingredients.replace(/\n/g, ', ')}</div>` : ''}
