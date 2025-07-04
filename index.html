@@ -416,12 +416,12 @@ const aiService = new AIAnalyticsService();
                 }
             }
             
-           setState(newState) {
+           ssetState(newState) {
     console.log('🔄 setState chiamata', Object.keys(newState));
 
     // 🔄 Salva lo scroll prima del render
     const scrollTarget = document.getElementById('menuScrollable');
-const savedScrollTop = scrollTarget?.scrollTop || 0;
+    const savedScrollTop = scrollTarget?.scrollTop || 0;
 
     const oldExpandedCategories = this.state.expandedCategories;
     this.state = { ...this.state, ...newState };
@@ -433,9 +433,8 @@ const savedScrollTop = scrollTarget?.scrollTop || 0;
 
     // ⏱️ Dopo il rendering, ripristina lo scroll con un frame di ritardo
     requestAnimationFrame(() => {
-    const newScrollTarget = document.getElementById('menuScrollable');
-    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
-});
+        const newScrollTarget = document.getElementById('menuScrollable');
+        if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
     });
 }
             
