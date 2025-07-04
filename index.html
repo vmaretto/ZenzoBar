@@ -1607,10 +1607,12 @@ confirmGuestCount() {
 }
             
 async applyTableLayout() {
-    const newTables = /* calcolo */;
-    this.setState({ customTables: newTables });
+    const newTables = this.generateTableLayout(this.state.tableCount);
+    
+    this.setState({ customTables: newTables }); // Mantiene gli ordini esistenti
     await firebaseService.update('tables', newTables);
-    alert(`✅ LAYOUT APPLICATO! Tavoli: ${this.state.tableCount}`);
+    
+    alert(`✅ LAYOUT AGGIORNATO con ${this.state.tableCount} tavoli!`);
 }
 async resetTables() {
     if (!window.confirm('⚠️ RESET COMPLETO! Cancellare tutto?')) return;
