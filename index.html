@@ -1607,25 +1607,11 @@ confirmGuestCount() {
 }
             
 async applyTableLayout() {
-    const newTables = [];
-    for (let i = 0; i < this.state.tableCount; i++) {
-        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2;
-        newTables.push({ id: i + 1, number: i + 1, seats: seats });
-    }
-
-    this.setState({ 
-        customTables: newTables,
-        orders: {},
-        activeOrders: []
-    });
-
+    const newTables = /* calcolo */;
+    this.setState({ customTables: newTables });
     await firebaseService.update('tables', newTables);
-    await firebaseService.update('orders', {});
-    await firebaseService.update('activeOrders', []);
-
     alert(`✅ LAYOUT APPLICATO! Tavoli: ${this.state.tableCount}`);
 }
-
 async resetTables() {
     if (!window.confirm('⚠️ RESET COMPLETO! Cancellare tutto?')) return;
 
