@@ -420,8 +420,8 @@ const aiService = new AIAnalyticsService();
     console.log('🔄 setState chiamata', Object.keys(newState));
 
     // 🔄 Salva lo scroll prima del render
-    const scrollContainers = document.querySelectorAll('.menu-scrollable');
-    const scrollTops = Array.from(scrollContainers).map(sc => sc.scrollTop);
+    const scrollTarget = document.getElementById('menuScrollable');
+const savedScrollTop = scrollTarget?.scrollTop || 0;
 
     const oldExpandedCategories = this.state.expandedCategories;
     this.state = { ...this.state, ...newState };
@@ -433,10 +433,9 @@ const aiService = new AIAnalyticsService();
 
     // ⏱️ Dopo il rendering, ripristina lo scroll con un frame di ritardo
     requestAnimationFrame(() => {
-        const newScrollContainers = document.querySelectorAll('.menu-scrollable');
-        newScrollContainers.forEach((sc, i) => {
-            sc.scrollTop = scrollTops[i] || 0;
-        });
+    const newScrollTarget = document.getElementById('menuScrollable');
+    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
+});
     });
 }
             
@@ -707,7 +706,7 @@ renderAIAnalytics() {
             
             async addToOrder(item, note = '') {
                 const currentOrder = this.getCurrentOrder();
-                
+                document.activeElement?.blur(); // Previene scroll automatico su focus
                 if (note || item.isFreeOrder) {
                     const newItem = { 
                         ...item, 
@@ -1362,7 +1361,7 @@ triggerCSVUpload() {
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
 
                 <!-- Menu -->
-               <div class="w-full md:w-1/2 overflow-y-auto menu-scrollable"
+              <div id="menuScrollable" class="w-full md:w-1/2 overflow-y-auto menu-scrollable"
                     style="display: ${this.state.activeTab === 'menu' || window.innerWidth >= 768 ? 'block' : 'none'};">
                     
                     <!-- Menu Header -->
