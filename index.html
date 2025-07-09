@@ -1327,15 +1327,7 @@ triggerCSVUpload() {
     
                 const isBreakfastMode = this.state.selectedTable === 998;
 
-                if (this.state.selectedTable === 998) {
-    return `
-        <div class="p-6 bg-white h-full">
-            <h2 class="text-xl font-bold mb-4">🍩 Modalità Colazione</h2>
-            <p class="text-gray-600">Qui puoi visualizzare e selezionare solo i prodotti della categoria "Colazione".</p>
-            <p class="text-sm text-gray-400 mt-2">Per ordinare, torna ai tavoli e seleziona un tavolo reale.</p>
-        </div>
-    `;
-}
+               
 const categories = isBreakfastMode ? ["Colazione"] : Object.keys(this.menuCategories);
                 
 
@@ -1394,7 +1386,8 @@ const categories = isBreakfastMode ? ["Colazione"] : Object.keys(this.menuCatego
 
                     <!-- Categorie -->
                     <div class="p-4 space-y-3">
-                        ${Object.entries(this.menuCategories).map(([category, items]) => {
+                        ${categories.map(category => {
+    const items = this.menuCategories[category] || [];
                             const isExpanded = this.state.expandedCategories[category];
                             const itemCount = items.length;
 
@@ -1702,11 +1695,12 @@ firebaseService.update('activeOrders', updatedActiveOrders);
 }
 
 openBreakfastMenu() {
-    this.state.tempSelectedTable = 998; // ID fittizio solo per la vista colazione
+    this.state.tempSelectedTable = 998;
     this.setState({ 
         selectedTable: 998, 
         currentView: 'menu',
-        expandedCategories: { "Colazione": true }
+        expandedCategories: { "Colazione": true },
+        activeTab: 'order' // forza il tab corretto
     });
 }
             
