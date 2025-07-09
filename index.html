@@ -1326,6 +1326,16 @@ triggerCSVUpload() {
     const currentOrder = this.getCurrentOrder();
     
                 const isBreakfastMode = this.state.selectedTable === 998;
+
+                if (this.state.selectedTable === 998) {
+    return `
+        <div class="p-6 bg-white h-full">
+            <h2 class="text-xl font-bold mb-4">🍩 Modalità Colazione</h2>
+            <p class="text-gray-600">Qui puoi visualizzare e selezionare solo i prodotti della categoria "Colazione".</p>
+            <p class="text-sm text-gray-400 mt-2">Per ordinare, torna ai tavoli e seleziona un tavolo reale.</p>
+        </div>
+    `;
+}
 const categories = isBreakfastMode ? ["Colazione"] : Object.keys(this.menuCategories);
                 
 
@@ -1432,13 +1442,7 @@ const categories = isBreakfastMode ? ["Colazione"] : Object.keys(this.menuCatego
                 <div class="w-full md:w-1/2 overflow-y-auto bg-white p-4 border-t md:border-t-0 md:border-l border-gray-200 menu-scrollable"
                     style="display: ${this.state.activeTab === 'order' || window.innerWidth >= 768 ? 'block' : 'none'};">
                     
-                    if (isBreakfastMode) return `
-    <div class="p-6 bg-white h-full">
-        <h2 class="text-xl font-bold mb-4">🍩 Modalità Colazione</h2>
-        <p class="text-gray-600">Qui puoi visualizzare e selezionare solo i prodotti della categoria "Colazione".</p>
-        <p class="text-sm text-gray-400 mt-2">Per ordinare, torna ai tavoli e seleziona un tavolo reale.</p>
-    </div>
-`;
+                    
 
                     <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
                     ${currentOrder.length === 0 ? `
@@ -1597,14 +1601,7 @@ ${this.state.discount > 0 ? `
             }
 
 
-openBreakfastMenu() {
-    this.state.tempSelectedTable = 998; // ID fittizio solo per la vista colazione
-    this.setState({ 
-        selectedTable: 998, 
-        currentView: 'menu',
-        expandedCategories: { "Colazione": true }
-    });
-}
+
             
 setDiscount(percent) {
     this.setState({ discount: percent });
@@ -1703,7 +1700,16 @@ firebaseService.update('activeOrders', updatedActiveOrders);
     return;
 }
 }
-    
+
+openBreakfastMenu() {
+    this.state.tempSelectedTable = 998; // ID fittizio solo per la vista colazione
+    this.setState({ 
+        selectedTable: 998, 
+        currentView: 'menu',
+        expandedCategories: { "Colazione": true }
+    });
+}
+            
 }
             
             
