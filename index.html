@@ -1172,6 +1172,10 @@ triggerCSVUpload() {
                                 </div>
                             </div>
                             <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
+
+                            <button onclick="app.openBreakfastMenu()" class="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+    🍩 Colazione
+</button>
                                 <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                     👨‍🍳 Cucina
                                     ${this.state.activeOrders.length > 0 ? 
@@ -1320,7 +1324,10 @@ triggerCSVUpload() {
             renderMenuView() {
     const table = this.tables.find(t => t.id === this.state.selectedTable);
     const currentOrder = this.getCurrentOrder();
-    const categories = Object.keys(this.menuCategories);
+    
+                const isBreakfastMode = this.state.selectedTable === 998;
+const categories = isBreakfastMode ? ["Colazione"] : Object.keys(this.menuCategories);
+                const categories = Object.keys(this.menuCategories);
 
     return `
         <div class="flex flex-col h-screen bg-gray-50">
@@ -1424,6 +1431,15 @@ triggerCSVUpload() {
                 <!-- Ordine Corrente -->
                 <div class="w-full md:w-1/2 overflow-y-auto bg-white p-4 border-t md:border-t-0 md:border-l border-gray-200 menu-scrollable"
                     style="display: ${this.state.activeTab === 'order' || window.innerWidth >= 768 ? 'block' : 'none'};">
+                    
+                    const isBreakfastMode = this.state.selectedTable === 998;
+if (isBreakfastMode) return `
+    <div class="p-6 bg-white h-full">
+        <h2 class="text-xl font-bold mb-4">🍩 Modalità Colazione</h2>
+        <p class="text-gray-600">Qui puoi visualizzare e selezionare solo i prodotti della categoria "Colazione".</p>
+        <p class="text-sm text-gray-400 mt-2">Per ordinare, torna ai tavoli e seleziona un tavolo reale.</p>
+    </div>
+`;
                     <h3 class="font-bold text-lg mb-4">🛒 Ordine Corrente</h3>
                     ${currentOrder.length === 0 ? `
                         <div class="text-center text-gray-500 mt-8">
@@ -1580,6 +1596,16 @@ ${this.state.discount > 0 ? `
                 `;
             }
 
+
+openBreakfastMenu() {
+    this.state.tempSelectedTable = 998; // ID fittizio solo per la vista colazione
+    this.setState({ 
+        selectedTable: 998, 
+        currentView: 'menu',
+        expandedCategories: { "Colazione": true }
+    });
+}
+            
 setDiscount(percent) {
     this.setState({ discount: percent });
     alert(`🎁 Sconto del ${percent}% applicato`);
