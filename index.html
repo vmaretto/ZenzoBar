@@ -399,6 +399,15 @@ const aiService = new AIAnalyticsService();
                     });
 
                     firebaseService.onSnapshot('tables', (data) => {
+    console.log('📨 Ricevuti tables:', data);
+    if (Array.isArray(data)) {
+        const hasTakeAway = data.some(t => t.id === 999);
+        if (!hasTakeAway) {
+            data.push({ id: 999, number: 'Take Away', seats: 0 });
+        }
+        this.setState({ customTables: data });
+    }
+});firebaseService.onSnapshot('tables', (data) => {
                         console.log('📨 Ricevuti tables:', data);
                         if (Array.isArray(data) && data.length > 0) {
                             this.setState({ customTables: data });
@@ -621,52 +630,6 @@ tables.push({ id: 999, number: 'Take Away' });
                 this.cancelFreeOrder();
             }
 
-showManualOrderModal() {
-    console.log('➕ Aggiungi ordine manuale');
-    document.getElementById('manualTable').value = '';
-    document.getElementById('manualTotal').value = '';
-    document.getElementById('manualItems').value = '';
-    document.getElementById('manualDateTime').value = '';
-    document.getElementById('manualClosedBy').value = 'waiter';
-    document.getElementById('manualOrderModal').classList.remove('hidden');
-}
-
-cancelManualOrder() {
-    document.getElementById('manualOrderModal').classList.add('hidden');
-}
-
-async saveManualOrder() {
-   const table = parseInt(document.getElementById('manualTable').value);
-const isTakeAway = table === 999;
-const isBreakfast = table === 998;
-    const totalInput = parseFloat(document.getElementById('manualTotal').value);
-    
-    const dateTime = document.getElementById('manualDateTime').value;
-    const closedBy = document.getElementById('manualClosedBy').value;
-
-    if (!table || !totalInput || !dateTime) {
-        alert('⚠️ Inserisci tavolo, totale e data/ora');
-        return;
-    }
-const itemsText = document.getElementById('manualItems').value.trim();
-const itemNames = itemsText ? itemsText.split(/,|\n/).map(t => t.trim()).filter(t => t) : [];
-
-let items;
-
-if (itemNames.length > 0) {
-    const singleItemPrice = (totalInput / itemNames.length).toFixed(2);
-    items = itemNames.map(name => ({
-        name,
-        quantity: 1,
-        price: parseFloat(singleItemPrice)
-    }));
-} else {
-    items = [{
-        name: isTakeAway ? '[Take Away]' : isBreakfast ? '[Colazione]' : 'Ordine Manuale',
-        quantity: 1,
-        price: totalInput
-    }];
-}
 
     // Calcolo sconto se presente (campo opzionale "manualDiscount" da aggiungere se vuoi)
     const discountPercent = parseInt(document.getElementById('manualDiscount')?.value) || 0;
@@ -902,19 +865,7 @@ if (isTakeAway) {
     
     alert('✅ Take Away registrato nello storico!');
     this.setState({ currentView: 'tables' });
-} else {
-    // Flusso normale per i tavoli
-    const updatedActiveOrders = [...this.state.activeOrders, newOrder];
-    this.setState({ activeOrders: updatedActiveOrders });
-    await firebaseService.update('activeOrders', updatedActiveOrders);
-
-    const clearedOrders = { ...this.state.orders };
-    delete clearedOrders[this.state.selectedTable];
-    this.setState({ orders: clearedOrders });
-    await firebaseService.update('orders', clearedOrders);
-    
-    alert('✅ ORDINE INVIATO IN CUCINA!');
-    this.setState({ currentView: 'tables' });
+    return; // 🔴 IMPORTANTE: interrompi qui il flusso!
 }
                     this.setState({ activeOrders: updatedActiveOrders });
                     await firebaseService.update('activeOrders', updatedActiveOrders);
@@ -1091,7 +1042,7 @@ const dateKey = ts.toLocaleDateString('it-IT');
                     <button onclick="app.exportOrderHistoryCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                         📤 Esporta in CSV
                     </button>
-                    <button onclick="app.showManualOrderModal()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    <button onclick="app.selectTable(999)" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
 ➕ Ordine Manuale
 </button>
                     <button onclick="app.setState({currentView: 'tables'})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
@@ -1771,6 +1722,17 @@ async deleteOrderFromHistory(orderId) {
 }
             
 selectTable(tableId) {
+
+    if (tableId === 999) {
+        this.setState({
+            selectedTable: 999,
+            currentView: 'menu',
+            expandedCategories: {}, // Se vuoi aprirle tutte, metti qui la logica
+            activeTab: 'menu'
+        });
+        return;
+    }
+    
     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
 
     if (activeOrder) {
@@ -1856,31 +1818,7 @@ openBreakfastMenu() {
   </div>
 </div>
 
-<!-- Modal ordine manuale per storico -->
-<div id="manualOrderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-  <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
-    <h3 class="text-lg font-bold mb-4">➕ Inserisci Ordine Manuale</h3>
-    <div class="space-y-3">
-      <select id="manualTable" class="w-full border rounded p-3">
-    <option value="999">🍽️ Take Away</option>
-    <option value="998">🥐 Colazione</option>
-    ${this.tables.map(t => `<option value="${t.id}">Tavolo ${t.number}</option>`).join('')}
-</select>
-      <input id="manualTotal" type="number" step="0.01" placeholder="Totale (€)" class="w-full border rounded p-3">
-        <input id="manualDiscount" type="number" min="0" max="100" value="0" placeholder="Sconto (%)" class="w-full border rounded p-3">
-      <textarea id="manualItems" rows="3" placeholder="Descrizione articoli o nota" class="w-full border rounded p-3"></textarea>
-      <input id="manualDateTime" type="datetime-local" class="w-full border rounded p-3">
-      <select id="manualClosedBy" class="w-full border rounded p-3">
-        <option value="waiter">👤 Cameriere</option>
-        <option value="kitchen">👨‍🍳 Cucina</option>
-      </select>
-    </div>
-    <div class="flex gap-3 justify-end mt-4">
-      <button onclick="app.cancelManualOrder()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Annulla</button>
-      <button onclick="app.saveManualOrder()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
-    </div>
-  </div>
-</div>
+
     
 </body>
 </html>
