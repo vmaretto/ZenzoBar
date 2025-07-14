@@ -826,70 +826,72 @@ calculateTotalWithDiscount() {
     return total - discountValue;
 }
             
-            async printOrder() {
-                const currentOrder = this.getCurrentOrder();
-                if (currentOrder.length === 0) {
-                    alert('Nessun articolo nell\'ordine!');
-                    return;
-                }
+            
 
-                this.setState({ syncStatus: '🔄 Invio in cucina...' });
-                
-                try {
-                    const isTakeAway = this.state.selectedTable === 999;
+async printOrder() {
+    const currentOrder = this.getCurrentOrder();
+    if (currentOrder.length === 0) {
+        alert('Nessun articolo nell\'ordine!');
+        return;
+    }
 
-const newOrder = {
-    id: Date.now(),
-    tableNumber: this.state.selectedTable,
-    items: [...currentOrder],
-    total: this.calculateTotal(),
-    timestamp: Date.now(),
-    state: isTakeAway ? 'paid' : 'sent', // 🟢 Se è Take Away va subito in "paid"
-    closedAt: isTakeAway ? Date.now() : null,
-    closedBy: isTakeAway ? 'waiter' : null,
-    isModified: false,
-    version: 1
-};
+    this.setState({ syncStatus: '🔄 Invio in cucina...' });
 
-if (isTakeAway) {
-    // Se è Take Away lo sposto direttamente nello storico
-    const updatedHistory = [newOrder, ...this.state.orderHistory];
-    this.setState({ orderHistory: updatedHistory });
-    await firebaseService.update('orderHistory', updatedHistory);
-    
-    // Svuota ordine corrente
-    const clearedOrders = { ...this.state.orders };
-    delete clearedOrders[this.state.selectedTable];
-    this.setState({ orders: clearedOrders });
-    await firebaseService.update('orders', clearedOrders);
-    
-    alert('✅ Take Away registrato nello storico!');
-    this.setState({ currentView: 'tables' });
-    return; // 🔴 IMPORTANTE: interrompi qui il flusso!
+    try {
+        const isTakeAway = this.state.selectedTable === 999;
+
+        const newOrder = {
+            id: Date.now(),
+            tableNumber: this.state.selectedTable,
+            items: [...currentOrder],
+            total: this.calculateTotal(),
+            timestamp: Date.now(),
+            state: isTakeAway ? 'paid' : 'sent',
+            closedAt: isTakeAway ? Date.now() : null,
+            closedBy: isTakeAway ? 'waiter' : null,
+            isModified: false,
+            version: 1
+        };
+
+        if (isTakeAway) {
+            // Take Away va direttamente nello storico
+            const updatedHistory = [newOrder, ...this.state.orderHistory];
+            this.setState({ orderHistory: updatedHistory });
+            await firebaseService.update('orderHistory', updatedHistory);
+
+            // Svuota ordine corrente
+            const clearedOrders = { ...this.state.orders };
+            delete clearedOrders[this.state.selectedTable];
+            this.setState({ orders: clearedOrders });
+            await firebaseService.update('orders', clearedOrders);
+
+            alert('✅ Take Away registrato nello storico!');
+            this.setState({ currentView: 'tables' });
+            return; // 🔴 Fine flusso per Take Away
+        }
+
+        // 🟢 Per i tavoli normali: aggiungi agli activeOrders
+        const updatedActiveOrders = [...this.state.activeOrders, newOrder];
+        this.setState({ activeOrders: updatedActiveOrders });
+        await firebaseService.update('activeOrders', updatedActiveOrders);
+
+        // Svuota l'ordine corrente dal tavolo
+        const clearedOrders = { ...this.state.orders };
+        delete clearedOrders[this.state.selectedTable];
+        this.setState({ orders: clearedOrders });
+        await firebaseService.update('orders', clearedOrders);
+
+        this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
+        alert('✅ ORDINE INVIATO IN CUCINA!');
+        this.setState({ currentView: 'tables' });
+
+    } catch (error) {
+        this.setState({ syncStatus: '❌ Errore invio' });
+        alert('❌ Errore durante l\'invio in cucina. Riprova.');
+    }
 }
 
-                    // 👇 PATCH DA METTERE QUI
-const updatedActiveOrders = [...this.state.activeOrders, newOrder];
-this.setState({ activeOrders: updatedActiveOrders });
-await firebaseService.update('activeOrders', updatedActiveOrders);
-                    
-                    this.setState({ activeOrders: updatedActiveOrders });
-                    await firebaseService.update('activeOrders', updatedActiveOrders);
-                    
-                    const clearedOrders = { ...this.state.orders };
-                    delete clearedOrders[this.state.selectedTable];
-                    this.setState({ orders: clearedOrders });
-                    await firebaseService.update('orders', clearedOrders);
-                    
-                    this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
-                    alert('✅ ORDINE INVIATO IN CUCINA!');
-                    this.setState({ currentView: 'tables' });
-                } catch (error) {
-                    this.setState({ syncStatus: '❌ Errore invio' });
-                    alert('❌ Errore durante l\'invio in cucina. Riprova.');
-                }
-            }
-            
+        
             toggleCategory(category) {
                 console.log('🔄 Toggle categoria:', category);
                 
