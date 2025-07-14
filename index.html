@@ -91,11 +91,7 @@
                     <input type="number" step="0.1" min="0" id="freeItemPrice" class="w-full border rounded p-3" placeholder="0.00">
                 </div>
 
-<!-- 🆕 Campo Data e Orario -->
-      <div>
-        <label class="block text-sm font-medium mb-2">Data e Orario:</label>
-        <input type="datetime-local" id="freeOrderDateTime" class="w-full border rounded p-3" />
-      </div>
+
 
       <div>
         <label class="block text-sm font-medium mb-2">Note (opzionale):</label>
@@ -865,63 +861,79 @@ async saveFreeOrder() {
             }
 
             async printOrder() {
-                const currentOrder = this.getCurrentOrder();
-                if (currentOrder.length === 0) {
-                    alert('Nessun articolo nell\'ordine!');
-                    return;
-                }
+    const currentOrder = this.getCurrentOrder();
+    if (currentOrder.length === 0) {
+        alert('Nessun articolo nell\'ordine!');
+        return;
+    }
 
-                this.setState({ syncStatus: '🔄 Invio in cucina...' });
+    // Mostra stato invio
+    this.setState({ syncStatus: '🔄 Invio in cucina...' });
 
-                try {
-                    const isTakeAway = this.state.selectedTable === 999;
+    // 🆕 Calcola ts:
+    // Se è ordine manuale (tavolo 999), prendi la data/ora da #manualOrderDateTime
+    // Altrimenti fallback a ora corrente
+    let ts;
+    if (this.state.selectedTable === 999) {
+        const dtVal = document.getElementById('manualOrderDateTime').value;
+        ts = dtVal ? new Date(dtVal).getTime() : Date.now();
+        console.log('🔖 Manual order timestamp:', new Date(ts).toLocaleString());
+    } else {
+        ts = Date.now();
+    }
 
-                    const newOrder = {
-                        id: Date.now(),
-                        tableNumber: this.state.selectedTable,
-                        items: [...currentOrder],
-                        total: this.calculateTotal(),
-                        timestamp: ts,
-                        state: isTakeAway ? 'paid' : 'sent',
-                        closedAt: isTakeAway ? ts : null,
-                        closedBy: isTakeAway ? 'waiter' : null,
-                        isModified: false,
-                        version: 1
-                    };
+    try {
+        const isTakeAway = this.state.selectedTable === 999;
 
-                    if (isTakeAway) {
-                        const updatedHistory = [newOrder, ...this.state.orderHistory];
-                        this.setState({ orderHistory: updatedHistory });
-                        await firebaseService.update('orderHistory', updatedHistory);
+        const newOrder = {
+            id: Date.now(),
+            tableNumber: this.state.selectedTable,
+            items: [...currentOrder],
+            total: this.calculateTotal(),
+            timestamp: ts,                      // ← qui usiamo ts
+            state: isTakeAway ? 'paid' : 'sent',
+            closedAt: isTakeAway ? ts : null,   // ← e qui
+            closedBy: isTakeAway ? 'waiter' : null,
+            isModified: false,
+            version: 1
+        };
 
-                        const clearedOrders = { ...this.state.orders };
-                        delete clearedOrders[this.state.selectedTable];
-                        this.setState({ orders: clearedOrders });
-                        await firebaseService.update('orders', clearedOrders);
+        if (isTakeAway) {
+            // Take Away: chiuso subito nello storico
+            const updatedHistory = [newOrder, ...this.state.orderHistory];
+            this.setState({ orderHistory: updatedHistory });
+            await firebaseService.update('orderHistory', updatedHistory);
 
-                        alert('✅ Take Away registrato nello storico!');
-                        this.setState({ currentView: 'tables' });
-                        return;
-                    }
+            const clearedOrders = { ...this.state.orders };
+            delete clearedOrders[this.state.selectedTable];
+            this.setState({ orders: clearedOrders });
+            await firebaseService.update('orders', clearedOrders);
 
-                    const updatedActiveOrders = [...this.state.activeOrders, newOrder];
-                    this.setState({ activeOrders: updatedActiveOrders });
-                    await firebaseService.update('activeOrders', updatedActiveOrders);
+            alert('✅ Take Away registrato nello storico!');
+            this.setState({ currentView: 'tables' });
+            return;
+        }
 
-                    const clearedOrders = { ...this.state.orders };
-                    delete clearedOrders[this.state.selectedTable];
-                    this.setState({ orders: clearedOrders });
-                    await firebaseService.update('orders', clearedOrders);
+        // Ordine normale: va in activeOrders e poi invia in cucina
+        const updatedActive = [...this.state.activeOrders, newOrder];
+        this.setState({ activeOrders: updatedActive });
+        await firebaseService.update('activeOrders', updatedActive);
 
-                    this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
-                    alert('✅ ORDINE INVIATO IN CUCINA!');
-                    this.setState({ currentView: 'tables' });
+        const cleared = { ...this.state.orders };
+        delete cleared[this.state.selectedTable];
+        this.setState({ orders: cleared });
+        await firebaseService.update('orders', cleared);
 
-                } catch (error) {
-                    this.setState({ syncStatus: '❌ Errore invio' });
-                    alert('❌ Errore durante l\'invio in cucina. Riprova.');
-                }
-            }
+        this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
+        alert('✅ ORDINE INVIATO IN CUCINA!');
+        this.setState({ currentView: 'tables' });
+
+    } catch (error) {
+        this.setState({ syncStatus: '❌ Errore invio' });
+        console.error('❌ printOrder error:', error);
+        alert('❌ Errore durante l\'invio in cucina. Riprova.');
+    }
+}
         
             toggleCategory(category) {
                 const currentExpanded = this.state.expandedCategories[category] || false;
@@ -1455,6 +1467,18 @@ async saveFreeOrder() {
                                 <button onclick="app.setState({currentView: 'tables'})" class="p-2 hover:bg-gray-100 rounded-lg">✕</button>
                                 <h1 class="text-xl font-bold">Tavolo ${table?.number}</h1>
                             </div>
+
+${this.state.selectedTable === 999 ? `
+  <div class="mt-2 mb-4 flex items-center gap-2">
+    <label for="manualOrderDateTime" class="font-medium text-sm">Data e Orario:</label>
+    <input
+      type="datetime-local"
+      id="manualOrderDateTime"
+      class="border rounded p-2 text-sm"
+    />
+  </div>
+` : ''}
+                            
                             <div class="flex flex-wrap gap-2 md:gap-4 justify-end">
                                 ${currentOrder.length > 0 ? `
                                     <div class="text-lg font-bold text-green-600">€${this.calculateTotal().toFixed(2)}</div>
