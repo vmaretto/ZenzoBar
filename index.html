@@ -867,6 +867,12 @@ if (isTakeAway) {
     this.setState({ currentView: 'tables' });
     return; // 🔴 IMPORTANTE: interrompi qui il flusso!
 }
+
+                    // 👇 PATCH DA METTERE QUI
+const updatedActiveOrders = [...this.state.activeOrders, newOrder];
+this.setState({ activeOrders: updatedActiveOrders });
+await firebaseService.update('activeOrders', updatedActiveOrders);
+                    
                     this.setState({ activeOrders: updatedActiveOrders });
                     await firebaseService.update('activeOrders', updatedActiveOrders);
                     
