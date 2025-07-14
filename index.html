@@ -1722,36 +1722,33 @@ async deleteOrderFromHistory(orderId) {
 }
             
 selectTable(tableId) {
-
     if (tableId === 999) {
+        // Take Away o Ordine Manuale
         this.setState({
             selectedTable: 999,
             currentView: 'menu',
-            expandedCategories: {}, // Se vuoi aprirle tutte, metti qui la logica
+            expandedCategories: {},
             activeTab: 'menu'
         });
         return;
     }
-    
+
     const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
 
     if (activeOrder) {
         const conferma = window.confirm(`⚠️ Il tavolo ${tableId} ha già un ordine attivo.\n\nVuoi CHIUDERLO (clicca OK) oppure MODIFICARLO (clicca Annulla)?`);
-        
+
         if (conferma) {
             this.closeOrderFromWaiter(tableId);
         } else {
-            // Recupera l'ordine attivo per modificarlo
             const draftOrders = { ...this.state.orders };
+            const updatedOldOrder = { ...activeOrder, label: 'OLD' };
+            const updatedActiveOrders = this.state.activeOrders.map(o =>
+                o.id === activeOrder.id ? updatedOldOrder : o
+            );
+            this.setState({ activeOrders: updatedActiveOrders });
+            firebaseService.update('activeOrders', updatedActiveOrders);
 
-            // Etichetta il vecchio ordine come "OLD"
-const updatedOldOrder = { ...activeOrder, label: 'OLD' };
-const updatedActiveOrders = this.state.activeOrders.map(o =>
-    o.id === activeOrder.id ? updatedOldOrder : o
-);
-this.setState({ activeOrders: updatedActiveOrders });
-firebaseService.update('activeOrders', updatedActiveOrders);
-            
             draftOrders[tableId] = [...activeOrder.items];
 
             this.setState({
@@ -1761,10 +1758,10 @@ firebaseService.update('activeOrders', updatedActiveOrders);
             });
         }
     } else {
-    this.state.tempSelectedTable = tableId;
-    document.getElementById('guestCountModal').classList.remove('hidden');
-    return;
-}
+        // Tavolo normale, mostra il guest count modal
+        this.state.tempSelectedTable = tableId;
+        document.getElementById('guestCountModal').classList.remove('hidden');
+    }
 }
 
 openBreakfastMenu() {
