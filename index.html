@@ -44,8 +44,7 @@
         
         console.log('🔥 Firebase inizializzato con successo!');
         
-        // Notifica che Firebase è pronto
-        window.dispatchEvent(new Event('firebaseReady'));
+        
     </script>
 </head>
 <body>
@@ -1762,14 +1761,10 @@ openBreakfastMenu() {
     });
 }
 }       
-        // Fallback se Firebase non si carica entro 3 secondi
-        setTimeout(() => {
-            if (!window.app) {
-                console.log('⚠️ Inizializzazione app con fallback...');
-                const app = new ZenzoBarApp();
-                window.app = app;
-            }
-        }, 3000);
+// L’evento di “firebaseReady” ora verrà ricevuto perché il listener è già registrato
+window.dispatchEvent(new Event('firebaseReady'));
+        
+        
     </script>
 
     <!-- Modal scelta numero persone -->
