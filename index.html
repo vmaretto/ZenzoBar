@@ -634,21 +634,31 @@ cancelManualOrder() {
 
 async saveManualOrder() {
     const table = parseInt(document.getElementById('manualTable').value);
-    const total = parseFloat(document.getElementById('manualTotal').value);
+    const totalInput = parseFloat(document.getElementById('manualTotal').value);
     const itemsText = document.getElementById('manualItems').value.trim();
     const dateTime = document.getElementById('manualDateTime').value;
     const closedBy = document.getElementById('manualClosedBy').value;
 
-    if (!table || !total || !dateTime) {
+    if (!table || !totalInput || !dateTime) {
         alert('⚠️ Inserisci tavolo, totale e data/ora');
         return;
     }
 
-    const items = [{
-        name: itemsText || 'Ordine Manuale',
+    // Articoli multipli separati da virgola o a capo
+    const itemNames = itemsText.split(/,|\n/).map(t => t.trim()).filter(t => t);
+    const singleItemPrice = (totalInput / itemNames.length).toFixed(2);
+
+    const items = itemNames.map(name => ({
+        name,
         quantity: 1,
-        price: total
-    }];
+        price: parseFloat(singleItemPrice)
+    }));
+
+    // Calcolo sconto se presente (campo opzionale "manualDiscount" da aggiungere se vuoi)
+    const discountPercent = parseInt(document.getElementById('manualDiscount')?.value) || 0;
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discountValue = subtotal * (discountPercent / 100);
+    const total = subtotal - discountValue;
 
     const order = {
         id: Date.now(),
@@ -1808,6 +1818,7 @@ openBreakfastMenu() {
     <div class="space-y-3">
       <input id="manualTable" type="number" min="1" placeholder="Numero Tavolo" class="w-full border rounded p-3">
       <input id="manualTotal" type="number" step="0.01" placeholder="Totale (€)" class="w-full border rounded p-3">
+        <input id="manualDiscount" type="number" min="0" max="100" value="0" placeholder="Sconto (%)" class="w-full border rounded p-3">
       <textarea id="manualItems" rows="3" placeholder="Descrizione articoli o nota" class="w-full border rounded p-3"></textarea>
       <input id="manualDateTime" type="datetime-local" class="w-full border rounded p-3">
       <select id="manualClosedBy" class="w-full border rounded p-3">
