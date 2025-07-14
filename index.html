@@ -627,32 +627,7 @@ const aiService = new AIAnalyticsService();
             }
 
 
-    // Calcolo sconto se presente (campo opzionale "manualDiscount" da aggiungere se vuoi)
-    const discountPercent = parseInt(document.getElementById('manualDiscount')?.value) || 0;
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discountValue = subtotal * (discountPercent / 100);
-    const total = subtotal - discountValue;
 
-    const order = {
-        id: Date.now(),
-        tableNumber: table,
-        items: items,
-        total: total,
-        timestamp: new Date(dateTime).getTime(),
-        closedAt: new Date(dateTime).getTime(),
-        state: 'paid',
-        closedBy: closedBy
-    };
-
-    const updatedHistory = [order, ...this.state.orderHistory];
-
-    this.setState({ orderHistory: updatedHistory });
-    await firebaseService.update('orderHistory', updatedHistory);
-
-    document.getElementById('manualOrderModal').classList.add('hidden');
-
-    alert(`✅ Ordine manuale per Tavolo ${table} aggiunto allo storico`);
-}
             
 // Metodi AI
 async showAIAnalytics() {
