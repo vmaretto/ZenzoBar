@@ -6,6 +6,15 @@
     <title>ZenzoBar Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+    window.addEventListener('firebaseReady', () => {
+      if (!window.app) {
+        window.app = new ZenzoBarApp();
+        console.log('✅ ZenzoBar App inizializzata correttamente!');
+      }
+    });
+  </script>
     
     <!-- Firebase v9 SDK -->
     <script type="module">
@@ -1752,21 +1761,7 @@ openBreakfastMenu() {
         activeTab: 'order' // forza il tab corretto
     });
 }
-            
-}
-            
-            
-
-
-        
-        // Inizializza l'app quando Firebase è pronto
-        window.addEventListener('firebaseReady', () => {
-    if (!window.app) {
-        window.app = new ZenzoBarApp();
-        console.log('✅ ZenzoBar App inizializzata correttamente!');
-    }
-});
-        
+}       
         // Fallback se Firebase non si carica entro 3 secondi
         setTimeout(() => {
             if (!window.app) {
