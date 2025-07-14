@@ -618,6 +618,59 @@ const aiService = new AIAnalyticsService();
                 this.cancelFreeOrder();
             }
 
+showManualOrderModal() {
+    console.log('➕ Aggiungi ordine manuale');
+    document.getElementById('manualTable').value = '';
+    document.getElementById('manualTotal').value = '';
+    document.getElementById('manualItems').value = '';
+    document.getElementById('manualDateTime').value = '';
+    document.getElementById('manualClosedBy').value = 'waiter';
+    document.getElementById('manualOrderModal').classList.remove('hidden');
+}
+
+cancelManualOrder() {
+    document.getElementById('manualOrderModal').classList.add('hidden');
+}
+
+async saveManualOrder() {
+    const table = parseInt(document.getElementById('manualTable').value);
+    const total = parseFloat(document.getElementById('manualTotal').value);
+    const itemsText = document.getElementById('manualItems').value.trim();
+    const dateTime = document.getElementById('manualDateTime').value;
+    const closedBy = document.getElementById('manualClosedBy').value;
+
+    if (!table || !total || !dateTime) {
+        alert('⚠️ Inserisci tavolo, totale e data/ora');
+        return;
+    }
+
+    const items = [{
+        name: itemsText || 'Ordine Manuale',
+        quantity: 1,
+        price: total
+    }];
+
+    const order = {
+        id: Date.now(),
+        tableNumber: table,
+        items: items,
+        total: total,
+        timestamp: new Date(dateTime).getTime(),
+        closedAt: new Date(dateTime).getTime(),
+        state: 'paid',
+        closedBy: closedBy
+    };
+
+    const updatedHistory = [order, ...this.state.orderHistory];
+
+    this.setState({ orderHistory: updatedHistory });
+    await firebaseService.update('orderHistory', updatedHistory);
+
+    document.getElementById('manualOrderModal').classList.add('hidden');
+
+    alert(`✅ Ordine manuale per Tavolo ${table} aggiunto allo storico`);
+}
+            
 // Metodi AI
 async showAIAnalytics() {
     this.setState({ showAIModal: true });
@@ -983,6 +1036,9 @@ const dateKey = ts.toLocaleDateString('it-IT');
                     <button onclick="app.exportOrderHistoryCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                         📤 Esporta in CSV
                     </button>
+                    <button onclick="app.showManualOrderModal()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+➕ Ordine Manuale
+</button>
                     <button onclick="app.setState({currentView: 'tables'})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
                         ✕ Chiudi
                     </button>
@@ -1741,6 +1797,27 @@ openBreakfastMenu() {
       <button onclick="app.confirmGuestCount()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
         Conferma
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ordine manuale per storico -->
+<div id="manualOrderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+    <h3 class="text-lg font-bold mb-4">➕ Inserisci Ordine Manuale</h3>
+    <div class="space-y-3">
+      <input id="manualTable" type="number" min="1" placeholder="Numero Tavolo" class="w-full border rounded p-3">
+      <input id="manualTotal" type="number" step="0.01" placeholder="Totale (€)" class="w-full border rounded p-3">
+      <textarea id="manualItems" rows="3" placeholder="Descrizione articoli o nota" class="w-full border rounded p-3"></textarea>
+      <input id="manualDateTime" type="datetime-local" class="w-full border rounded p-3">
+      <select id="manualClosedBy" class="w-full border rounded p-3">
+        <option value="waiter">👤 Cameriere</option>
+        <option value="kitchen">👨‍🍳 Cucina</option>
+      </select>
+    </div>
+    <div class="flex gap-3 justify-end mt-4">
+      <button onclick="app.cancelManualOrder()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Annulla</button>
+      <button onclick="app.saveManualOrder()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
     </div>
   </div>
 </div>
