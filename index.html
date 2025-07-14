@@ -41,6 +41,7 @@
         window.firebaseDoc = doc;
         window.firebaseSetDoc = setDoc;
         window.firebaseOnSnapshot = onSnapshot;
+        window.dispatchEvent(new Event('firebaseReady'));
         
         console.log('🔥 Firebase inizializzato con successo!');
         
@@ -1761,8 +1762,6 @@ openBreakfastMenu() {
     });
 }
 }       
-// L’evento di “firebaseReady” ora verrà ricevuto perché il listener è già registrato
-window.dispatchEvent(new Event('firebaseReady'));
         
         
     </script>
