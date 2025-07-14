@@ -12,6 +12,22 @@
         .hidden {
             display: none !important;
         }
+
+        // ✅ FIX: Log che la classe è stata definita
+        console.log('📝 Classe ZenzoBarApp definita correttamente');
+        console.log('🎯 Tentativo di inizializzazione immediata...');
+        
+        // Prova inizializzazione immediata
+        setTimeout(() => {
+            if (!window.app) {
+                console.log('🚀 Inizializzazione immediata post-definizione classe');
+                try {
+                    window.app = new ZenzoBarApp();
+                } catch (error) {
+                    console.error('❌ Errore inizializzazione immediata:', error);
+                }
+            }
+        }, 50);
         
         /* Smooth loading animation */
         .loading-screen {
