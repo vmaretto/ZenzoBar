@@ -636,12 +636,11 @@ cancelManualOrder() {
 }
 
 async saveManualOrder() {
-    const table = parseInt(document.getElementById('manualTable').value);
-    const table = parseInt(document.getElementById('manualTable').value);
+   const table = parseInt(document.getElementById('manualTable').value);
 const isTakeAway = table === 999;
 const isBreakfast = table === 998;
     const totalInput = parseFloat(document.getElementById('manualTotal').value);
-    const itemsText = document.getElementById('manualItems').value.trim();
+    
     const dateTime = document.getElementById('manualDateTime').value;
     const closedBy = document.getElementById('manualClosedBy').value;
 
@@ -649,16 +648,25 @@ const isBreakfast = table === 998;
         alert('⚠️ Inserisci tavolo, totale e data/ora');
         return;
     }
+const itemsText = document.getElementById('manualItems').value.trim();
+const itemNames = itemsText ? itemsText.split(/,|\n/).map(t => t.trim()).filter(t => t) : [];
 
-    // Articoli multipli separati da virgola o a capo
-    const itemNames = itemsText.split(/,|\n/).map(t => t.trim()).filter(t => t);
+let items;
+
+if (itemNames.length > 0) {
     const singleItemPrice = (totalInput / itemNames.length).toFixed(2);
-
-    const items = itemNames.map(name => ({
+    items = itemNames.map(name => ({
         name,
         quantity: 1,
         price: parseFloat(singleItemPrice)
     }));
+} else {
+    items = [{
+        name: isTakeAway ? '[Take Away]' : isBreakfast ? '[Colazione]' : 'Ordine Manuale',
+        quantity: 1,
+        price: totalInput
+    }];
+}
 
     // Calcolo sconto se presente (campo opzionale "manualDiscount" da aggiungere se vuoi)
     const discountPercent = parseInt(document.getElementById('manualDiscount')?.value) || 0;
