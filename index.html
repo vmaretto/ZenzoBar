@@ -6,15 +6,22 @@
     <title>ZenzoBar Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-
-<script>
-    window.addEventListener('firebaseReady', () => {
-      if (!window.app) {
-        window.app = new ZenzoBarApp();
-        console.log('✅ ZenzoBar App inizializzata correttamente!');
-      }
-    });
-  </script>
+    
+    <style>
+        /* ✅ FIX: Assicura che i modal nascosti siano veramente invisibili */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Smooth loading animation */
+        .loading-screen {
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .loading-screen.fade-out {
+            opacity: 0;
+        }
+    </style>
     
     <!-- Firebase v9 SDK -->
     <script type="module">
@@ -44,12 +51,23 @@
         
         console.log('🔥 Firebase inizializzato con successo!');
         
-        
+        // ✅ FIX: Triggera l'evento firebaseReady
+        const event = new Event('firebaseReady');
+        window.dispatchEvent(event);
     </script>
+
+<script>
+    window.addEventListener('firebaseReady', () => {
+      if (!window.app) {
+        window.app = new ZenzoBarApp();
+        console.log('✅ ZenzoBar App inizializzata correttamente!');
+      }
+    });
+  </script>
 </head>
 <body>
     <div id="app">
-        <div class="flex items-center justify-center min-h-screen">
+        <div class="loading-screen flex items-center justify-center min-h-screen">
             <div class="text-center">
                 <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
                 <p class="mt-4 text-gray-600">Caricamento ZenzoBar...</p>
@@ -124,16 +142,29 @@
         // Firebase Service
         class FirebaseService {
             constructor() {
+                console.log('🔥 FirebaseService constructor chiamato');
                 this.db = null;
                 this.listeners = [];
                 this.isInitialized = false;
                 
+                // ✅ Verifica immediata se Firebase è disponibile
                 if (window.firebaseDb) {
+                    console.log('🔥 Firebase già disponibile, inizializzazione immediata');
                     this.initializeFirebase();
                 } else {
+                    console.log('⏳ Firebase non ancora disponibile, setup listener...');
                     window.addEventListener('firebaseReady', () => {
+                        console.log('🔥 Event firebaseReady ricevuto');
                         this.initializeFirebase();
                     });
+                    
+                    // Fallback timer
+                    setTimeout(() => {
+                        if (!this.isInitialized && window.firebaseDb) {
+                            console.log('⏰ Timeout - inizializzazione Firebase');
+                            this.initializeFirebase();
+                        }
+                    }, 2000);
                 }
             }
             
@@ -344,6 +375,8 @@ const aiService = new AIAnalyticsService();
         // ZenzoBar App
         class ZenzoBarApp {
             constructor() {
+                console.log('🏗️ Costruttore ZenzoBarApp chiamato');
+                
                 this.state = {
                     currentView: 'tables',
                     selectedTable: null,
@@ -366,12 +399,43 @@ const aiService = new AIAnalyticsService();
                     showAIModal: false
                 };
                 
-                this.init();
+                console.log('📝 State inizializzato:', this.state);
+                
+                try {
+                    this.init();
+                    console.log('✅ Init completato con successo');
+                } catch (error) {
+                    console.error('❌ Errore durante init:', error);
+                }
             }
             
             init() {
-                this.setupFirebaseListeners();
-                this.render();
+                console.log('🚀 Init chiamato');
+                
+                try {
+                    console.log('🔧 Setup Firebase listeners...');
+                    this.setupFirebaseListeners();
+                    console.log('✅ Firebase listeners ok');
+                } catch (error) {
+                    console.warn('⚠️ Errore Firebase listeners:', error);
+                }
+                
+                try {
+                    // ✅ FIX: Assicurati che tutti i modal siano nascosti all'avvio
+                    console.log('🔒 Nascondo modal...');
+                    this.hideAllModals();
+                    console.log('✅ Modal nascosti');
+                } catch (error) {
+                    console.warn('⚠️ Errore nascondere modal:', error);
+                }
+                
+                try {
+                    console.log('🎨 Primo render...');
+                    this.render();
+                    console.log('✅ Primo render completato');
+                } catch (error) {
+                    console.error('❌ ERRORE CRITICO nel render:', error);
+                }
                 
                 setInterval(() => {
                     const online = firebaseService.getConnectionState();
@@ -380,12 +444,30 @@ const aiService = new AIAnalyticsService();
                         this.setState({ syncStatus: '🔴 Offline' });
                     }
                 }, 5000);
+                
+                console.log('✅ ZenzoBarApp inizializzata completamente!');
+            }
+
+            hideAllModals() {
+                // Nascondi tutti i modal all'avvio
+                console.log('🔒 Nascondo tutti i modal...');
+                const modalIds = ['noteModal', 'freeOrderModal', 'aiAnalyticsModal', 'guestCountModal'];
+                modalIds.forEach(id => {
+                    const modal = document.getElementById(id);
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.style.display = 'none'; // Doppia sicurezza
+                    }
+                });
+                console.log('✅ Tutti i modal nascosti');
             }
             
             setupFirebaseListeners() {
+                console.log('🔥 Setup Firebase listeners iniziato');
                 this.setState({ syncStatus: '🔄 Connessione Firebase...' });
                 
                 try {
+                    console.log('📡 Configurazione listener orders...');
                     firebaseService.onSnapshot('orders', (data) => {
                         console.log('📨 Ricevuti orders:', data);
                         this.setState({ 
@@ -393,38 +475,48 @@ const aiService = new AIAnalyticsService();
                             syncStatus: '🔥 Sincronizzato Firebase'
                         });
                     });
+                    console.log('✅ Listener orders configurato');
 
+                    console.log('📡 Configurazione listener activeOrders...');
                     firebaseService.onSnapshot('activeOrders', (data) => {
                         console.log('📨 Ricevuti activeOrders:', data);
                         this.setState({ 
                             activeOrders: Array.isArray(data) ? data : []
                         });
                     });
+                    console.log('✅ Listener activeOrders configurato');
 
+                    console.log('📡 Configurazione listener orderHistory...');
                     firebaseService.onSnapshot('orderHistory', (data) => {
                         console.log('📨 Ricevuti orderHistory:', data);
                         this.setState({ orderHistory: Array.isArray(data) ? data : [] });
                     });
+                    console.log('✅ Listener orderHistory configurato');
 
+                    console.log('📡 Configurazione listener tables...');
                     firebaseService.onSnapshot('tables', (data) => {
-    console.log('📨 Ricevuti tables:', data);
-    if (Array.isArray(data)) {
-        const hasTakeAway = data.some(t => t.id === 999);
-        if (!hasTakeAway) {
-            data.push({ id: 999, number: 'Take Away', seats: 0 });
-        }
-        this.setState({ customTables: data });
-    }
-});
-                
+                        console.log('📨 Ricevuti tables:', data);
+                        if (Array.isArray(data)) {
+                            const hasTakeAway = data.some(t => t.id === 999);
+                            if (!hasTakeAway) {
+                                data.push({ id: 999, number: 'Take Away', seats: 0 });
+                            }
+                            this.setState({ customTables: data });
+                        }
+                    });
+                    console.log('✅ Listener tables configurato');
 
+                    console.log('📡 Configurazione listener menuData...');
                     firebaseService.onSnapshot('menuData', (data) => {
                         console.log('📨 Ricevuti menuData:', data);
                         this.setState({ customMenuData: data });
                     });
+                    console.log('✅ Listener menuData configurato');
+                    
+                    console.log('✅ Tutti i Firebase listeners configurati');
                     
                 } catch (error) {
-                    console.error('Errore setup Firebase listeners:', error);
+                    console.error('❌ Errore setup Firebase listeners:', error);
                     this.setState({ syncStatus: '❌ Errore connessione' });
                 }
             }
@@ -460,26 +552,69 @@ const aiService = new AIAnalyticsService();
                     return;
                 }
                 
+                console.log('📱 Elemento app trovato:', appElement);
+                
                 let content = '';
                 
-                switch(this.state.currentView) {
-                    case 'tables':
-                        content = this.renderTableView();
-                        break;
-                    case 'menu':
-                        content = this.renderMenuView();
-                        break;
-                    case 'kitchen':
-                        content = this.renderKitchenView();
-                        break;
-                    case 'history':
-                        content = this.renderHistoryView();
-                        break;
-                    default:
-                        content = this.renderTableView();
+                try {
+                    switch(this.state.currentView) {
+                        case 'tables':
+                            console.log('🏢 Rendering vista tables...');
+                            content = this.renderTableView();
+                            break;
+                        case 'menu':
+                            console.log('📋 Rendering vista menu...');
+                            content = this.renderMenuView();
+                            break;
+                        case 'kitchen':
+                            console.log('👨‍🍳 Rendering vista kitchen...');
+                            content = this.renderKitchenView();
+                            break;
+                        case 'history':
+                            console.log('🕐 Rendering vista history...');
+                            content = this.renderHistoryView();
+                            break;
+                        default:
+                            console.log('🏢 Rendering vista default (tables)...');
+                            content = this.renderTableView();
+                    }
+                    
+                    console.log('✅ Content generato, lunghezza:', content.length);
+                } catch (error) {
+                    console.error('❌ Errore generazione content:', error);
+                    content = '<div class="p-8"><h1 class="text-2xl font-bold text-red-600">Errore di rendering</h1><p>Controlla la console per dettagli</p></div>';
                 }
                 
-                appElement.innerHTML = content;
+                try {
+                    appElement.innerHTML = content;
+                    console.log('✅ Content inserito nel DOM');
+                } catch (error) {
+                    console.error('❌ Errore inserimento DOM:', error);
+                }
+                
+                try {
+                    // ✅ FIX: Nascondi completamente la schermata di caricamento
+                    const loadingScreen = document.querySelector('.loading-screen');
+                    if (loadingScreen) {
+                        console.log('📤 Nascondo schermata di caricamento...');
+                        loadingScreen.classList.add('fade-out');
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            console.log('✅ Schermata di caricamento nascosta');
+                        }, 300);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Errore nascondere loading screen:', error);
+                }
+                
+                try {
+                    // ✅ FIX: Assicurati che i modal siano nascosti dopo il render
+                    setTimeout(() => this.hideAllModals(), 100);
+                } catch (error) {
+                    console.warn('⚠️ Errore nascondere modal post-render:', error);
+                }
+                
+                console.log('🎉 Render completato!');
             }
             
             get menuCategories() {
@@ -502,6 +637,11 @@ const aiService = new AIAnalyticsService();
                     "Cocktail": [
                         { id: 13, name: "CHIOSCO AL MARE", price: 15, ingredients: "Gin dry Vermouth bianco Cetriolo Lime", description: "Il nostro cocktail signature. Botanico e pulito." },
                         { id: 14, name: "Ginger Mule Light", price: 10, ingredients: "Vodka infusa allo zenzero Lime Ginger beer", description: "Classico con spirito Zenzo." }
+                    ],
+                    "Colazione": [
+                        { id: 101, name: "Cornetto vuoto", price: 1.5, ingredients: "Farina, burro, lievito", description: "Cornetto fresco del mattino" },
+                        { id: 102, name: "Cornetto alla crema", price: 2, ingredients: "Farina, burro, crema pasticcera", description: "Cornetto ripieno di crema" },
+                        { id: 103, name: "Brioche integrale", price: 2.5, ingredients: "Farina integrale, semi", description: "Brioche salutare" }
                     ]
                 };
             }
@@ -1209,165 +1349,187 @@ triggerCSVUpload() {
     };
     input.click();
 }
+
+useDefaultMenu() {
+    this.setState({ customMenuData: null });
+    firebaseService.update('menuData', null);
+    alert('✅ Ripristinato menu di default!');
+}
             
             renderTableView() {
-                return `
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
-                                <div class="text-sm text-gray-600 mt-1">
-                                    ${this.state.syncStatus} • Multi-Device Ready
+                console.log('🏢 renderTableView() chiamata');
+                
+                try {
+                    const tables = this.tables;
+                    console.log('📊 Tavoli disponibili:', tables.length);
+                    
+                    return `
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h1 class="text-2xl font-bold text-gray-800">🔥 Carita Morena X Zenzo Bar</h1>
+                                    <div class="text-sm text-gray-600 mt-1">
+                                        ${this.state.syncStatus} • Multi-Device Ready
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
+
+                                <button onclick="app.openBreakfastMenu()" class="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+        🍩 Colazione
+    </button>
+                                    <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                        👨‍🍳 Cucina
+                                        ${this.state.activeOrders.length > 0 ? 
+                                            `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
+                                            : ''
+                                        }
+                                    </button>
+                                    <button onclick="app.showAIAnalytics()" class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        🤖 AI Analytics
+        ${this.state.orderHistory.length > 0 ? 
+            `<span class="bg-yellow-400 text-purple-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
+            : ''
+        }
+    </button>
+                                    <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                        ⚙️ Configura
+                                    </button>
+                                    <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        🕐 Storico
+                                    </button>
                                 </div>
                             </div>
-                            <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
-
-                            <button onclick="app.openBreakfastMenu()" class="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-    🍩 Colazione
-</button>
-                                <button onclick="app.setState({currentView: 'kitchen'})" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                    👨‍🍳 Cucina
-                                    ${this.state.activeOrders.length > 0 ? 
-                                        `<span class="bg-yellow-400 text-red-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.activeOrders.length}</span>` 
-                                        : ''
-                                    }
-                                </button>
-                                <button onclick="app.showAIAnalytics()" class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-    🤖 AI Analytics
-    ${this.state.orderHistory.length > 0 ? 
-        `<span class="bg-yellow-400 text-purple-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
-        : ''
-    }
-</button>
-                                <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                                    ⚙️ Configura
-                                </button>
-                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    🕐 Storico
-                                </button>
-                            </div>
+                            
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+        <p>🤖 Sistema AI attivo • Completa alcuni ordini per sbloccare le analisi intelligenti</p>
+                           
+                         ${this.state.showSettings ? `
+        <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
+            <!-- CONFIGURAZIONE MENU -->
+            <h3 class="text-lg font-semibold mb-4">Configurazione Menu</h3>
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 class="font-medium mb-3 text-blue-800">📋 Gestione Menu</h4>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-medium">Menu attivo:</span>
+                            <span class="ml-2 px-2 py-1 rounded text-sm ${this.state.customMenuData ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                ${this.state.customMenuData ? '📄 Menu CSV' : '🔧 Menu di Default'}
+                            </span>
                         </div>
-                        
-                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
-    <p>🤖 Sistema AI attivo • Completa alcuni ordini per sbloccare le analisi intelligenti</p>
-                       
-                     ${this.state.showSettings ? `
-    <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-        <!-- CONFIGURAZIONE MENU -->
-        <h3 class="text-lg font-semibold mb-4">Configurazione Menu</h3>
-        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 class="font-medium mb-3 text-blue-800">📋 Gestione Menu</h4>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="font-medium">Menu attivo:</span>
-                        <span class="ml-2 px-2 py-1 rounded text-sm ${this.state.customMenuData ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                            ${this.state.customMenuData ? '📄 Menu CSV' : '🔧 Menu di Default'}
-                        </span>
                     </div>
-                </div>
 
-                <div class="text-sm text-gray-600">
-                    📊 ${Object.keys(this.state.customMenuData || {}).length} categorie • 
-                    ${Object.values(this.state.customMenuData || {}).reduce((sum, items) => sum + items.length, 0)} articoli
-                </div>
+                    <div class="text-sm text-gray-600">
+                        📊 ${Object.keys(this.state.customMenuData || {}).length} categorie • 
+                        ${Object.values(this.state.customMenuData || {}).reduce((sum, items) => sum + items.length, 0)} articoli
+                    </div>
 
-                <div class="flex gap-3 flex-wrap">
-                    <button onclick="app.triggerCSVUpload()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        📂 Carica Menu da CSV
-                    </button>
-                    <button onclick="app.useDefaultMenu()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                        🔄 Torna al Menu di Default
-                    </button>
-                </div>
+                    <div class="flex gap-3 flex-wrap">
+                        <button onclick="app.triggerCSVUpload()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            📂 Carica Menu da CSV
+                        </button>
+                        <button onclick="app.useDefaultMenu()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                            🔄 Torna al Menu di Default
+                        </button>
+                    </div>
 
-                <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-600">
-                    <strong>💡 Come usare:</strong><br/>
-                    • <strong>CSV richiesto:</strong> Item, CATEGORIA, FASCIA, PREZZO, COSTO, MARGINE, ...<br/>
-                    • <strong>Delimitatore:</strong> ; (punto e virgola)<br/>
-                    • Include anche impronta idrica/carbonica e foto
+                    <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-600">
+                        <strong>💡 Come usare:</strong><br/>
+                        • <strong>CSV richiesto:</strong> Item, CATEGORIA, FASCIA, PREZZO, COSTO, MARGINE, ...<br/>
+                        • <strong>Delimitatore:</strong> ; (punto e virgola)<br/>
+                        • Include anche impronta idrica/carbonica e foto
+                    </div>
                 </div>
             </div>
+
+            <!-- CONFIGURAZIONE TAVOLI -->
+            <h3 class="text-lg font-semibold mb-4">Configurazione Tavoli</h3>
+            ...
+        </div>
+    ` : ''}   
+                            ${this.state.showSettings ? `
+    <div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
+        <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3 mb-4">
+            <label class="font-medium text-sm">Numero di tavoli:</label>
+            <input type="number" min="1" max="20" value="${this.state.tableCount}" 
+                   onchange="app.setState({tableCount: parseInt(this.value) || 1})"
+                   class="border rounded px-3 py-2 w-full sm:w-20">
         </div>
 
-        <!-- CONFIGURAZIONE TAVOLI -->
-        <h3 class="text-lg font-semibold mb-4">Configurazione Tavoli</h3>
-        ...
-    </div>
-` : ''}   
-                        ${this.state.showSettings ? `
-<div class="bg-white rounded-lg p-6 mb-6 border shadow-sm">
-    <h3 class="text-lg font-semibold mb-4">⚙️ Configurazione Tavoli</h3>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+            <button onclick="app.applyTableLayout()" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                📐 Applica Layout
+            </button>
+            <button onclick="app.resetTables()" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+                🔄 Reset Completo
+            </button>
+        </div>
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3 mb-4">
-        <label class="font-medium text-sm">Numero di tavoli:</label>
-        <input type="number" min="1" max="20" value="${this.state.tableCount}" 
-               onchange="app.setState({tableCount: parseInt(this.value) || 1})"
-               class="border rounded px-3 py-2 w-full sm:w-20">
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-3 mb-4">
-        <button onclick="app.applyTableLayout()" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
-            📐 Applica Layout
-        </button>
-        <button onclick="app.resetTables()" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
-            🔄 Reset Completo
+        <button onclick="app.setState({showSettings: false})" class="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm">
+            Chiudi Configurazione
         </button>
     </div>
-
-    <button onclick="app.setState({showSettings: false})" class="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm">
-        Chiudi Configurazione
-    </button>
-</div>
-` : ''}
-                
-                </div> 
-                        
-                        <div class="bg-white rounded-lg p-8 shadow-sm border">
-                            <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
+    ` : ''}
+                    
+                    </div> 
                             
-                            <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-full px-2 sm:px-0 justify-center">
-                                ${this.tables.map(table => {
-                                    const hasDraftOrder = this.state.orders[table.id]?.length > 0;
-                                    const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
-                                    
-                                    let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
-                                    let statusText = 'Libero';
-                                    
-                                    if (hasDraftOrder) {
-                                        bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
-                                        statusText = 'Bozza';
-                                    } else if (activeOrder) {
-                                        bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
-                                        statusText = 'In Cucina';
-                                    }
-                                    
-                                    return `
-                                        <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 active:scale-95 hover:shadow-lg ${bgColor} hover:border-blue-400">
-                                            <div class="font-bold text-lg">${table.number}</div>
-                                            <div class="text-xs flex items-center gap-1 opacity-80">
-                                                👥 ${table.seats}
-                                            </div>
-                                            
-                                            ${(hasDraftOrder || activeOrder) ? `
-                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
-                                                    ${hasDraftOrder 
-                                                        ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
-                                                        : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
-                                                    }
+                            <div class="bg-white rounded-lg p-8 shadow-sm border">
+                                <h2 class="text-lg font-semibold mb-6 text-center text-gray-700">Mappa Tavoli</h2>
+                                
+                                <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-full px-2 sm:px-0 justify-center">
+                                    ${tables.map(table => {
+                                        const hasDraftOrder = this.state.orders[table.id]?.length > 0;
+                                        const activeOrder = this.state.activeOrders.find(order => order.tableNumber === table.id);
+                                        
+                                        let bgColor = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
+                                        let statusText = 'Libero';
+                                        
+                                        if (hasDraftOrder) {
+                                            bgColor = 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
+                                            statusText = 'Bozza';
+                                        } else if (activeOrder) {
+                                            bgColor = 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
+                                            statusText = 'In Cucina';
+                                        }
+                                        
+                                        return `
+                                            <div onclick="app.selectTable(${table.id})" class="relative w-24 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-105 active:scale-95 hover:shadow-lg ${bgColor} hover:border-blue-400">
+                                                <div class="font-bold text-lg">${table.number}</div>
+                                                <div class="text-xs flex items-center gap-1 opacity-80">
+                                                    👥 ${table.seats}
                                                 </div>
-                                            ` : ''}
-                                            
-                                            <div class="absolute bottom-1 text-xs font-medium">
-                                                ${statusText}
+                                                
+                                                ${(hasDraftOrder || activeOrder) ? `
+                                                    <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">
+                                                        ${hasDraftOrder 
+                                                            ? this.state.orders[table.id].reduce((sum, item) => sum + item.quantity, 0)
+                                                            : activeOrder?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
+                                                        }
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                <div class="absolute bottom-1 text-xs font-medium">
+                                                    ${statusText}
+                                                </div>
                                             </div>
-                                        </div>
-                                    `;
-                                }).join('')}
+                                        `;
+                                    }).join('')}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } catch (error) {
+                    console.error('❌ Errore in renderTableView:', error);
+                    return `
+                        <div class="p-8">
+                            <h1 class="text-2xl font-bold text-red-600">Errore di rendering</h1>
+                            <p class="text-gray-600 mt-2">Si è verificato un errore durante il rendering della vista tavoli.</p>
+                            <pre class="mt-4 p-4 bg-gray-100 rounded text-sm">${error.message}</pre>
+                        </div>
+                    `;
+                }
             }
             
             renderMenuView() {
@@ -1700,7 +1862,7 @@ async resetTables() {
     await firebaseService.update('activeOrders', {});
 
     alert('✅ RESET COMPLETO ESEGUITO!');
-} // ✅ questa parentesi mancava qui!
+}
 
 async deleteOrderFromHistory(orderId) {
     const updatedHistory = this.state.orderHistory.filter(order => order.id !== orderId);
@@ -1757,7 +1919,7 @@ openBreakfastMenu() {
         selectedTable: 998, 
         currentView: 'menu',
         expandedCategories: { "Colazione": true },
-        activeTab: 'order' // forza il tab corretto
+        activeTab: 'order'
     });
 }
 }       
@@ -1766,22 +1928,19 @@ openBreakfastMenu() {
     </script>
 
     <!-- Modal scelta numero persone -->
-<div id="guestCountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-  <div class="bg-white rounded-lg p-6 w-80 max-w-full">
-    <h3 class="text-lg font-bold mb-4">👥 Quante persone al tavolo?</h3>
-    <input id="guestCountInput" type="number" min="1" max="20" placeholder="Numero persone" class="w-full border rounded p-3 mb-4 text-center">
-    <div class="flex gap-3 justify-end">
-      <button onclick="document.getElementById('guestCountModal').classList.add('hidden')" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-        Annulla
-      </button>
-      <button onclick="app.confirmGuestCount()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-        Conferma
-      </button>
+    <div id="guestCountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-80 max-w-full mx-4">
+            <h3 class="text-lg font-bold mb-4">👥 Quante persone al tavolo?</h3>
+            <input id="guestCountInput" type="number" min="1" max="20" placeholder="Numero persone" class="w-full border rounded p-3 mb-4 text-center">
+            <div class="flex gap-3 justify-end">
+                <button onclick="document.getElementById('guestCountModal').classList.add('hidden')" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Annulla
+                </button>
+                <button onclick="app.confirmGuestCount()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Conferma
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-
-    
 </body>
 </html>
