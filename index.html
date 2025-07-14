@@ -407,12 +407,8 @@ const aiService = new AIAnalyticsService();
         }
         this.setState({ customTables: data });
     }
-});firebaseService.onSnapshot('tables', (data) => {
-                        console.log('📨 Ricevuti tables:', data);
-                        if (Array.isArray(data) && data.length > 0) {
-                            this.setState({ customTables: data });
-                        }
-                    });
+});
+                
 
                     firebaseService.onSnapshot('menuData', (data) => {
                         console.log('📨 Ricevuti menuData:', data);
@@ -505,11 +501,11 @@ const aiService = new AIAnalyticsService();
             generateTableLayout(count) {
     const tables = [];
     for (let i = 0; i < count; i++) {
-        tables.push({ id: i + 1, number: i + 1 });
+        const seats = i % 3 === 0 ? 6 : i % 2 === 0 ? 4 : 2; // Alterna 6, 4, 2 posti
+        tables.push({ id: i + 1, number: i + 1, seats: seats });
     }
 
-                // ➕ Aggiungi il tavolo fittizio per ordini manuali
-tables.push({ id: 999, number: 'Take Away' });
+    tables.push({ id: 999, number: 'Take Away', seats: 0 });
     return tables;
 }
             
@@ -1790,12 +1786,11 @@ openBreakfastMenu() {
         
         // Inizializza l'app quando Firebase è pronto
         window.addEventListener('firebaseReady', () => {
-            setTimeout(() => {
-                const app = new ZenzoBarApp();
-                window.app = app;
-                console.log('✅ ZenzoBar App inizializzata correttamente!');
-            }, 500);
-        });
+    if (!window.app) {
+        window.app = new ZenzoBarApp();
+        console.log('✅ ZenzoBar App inizializzata correttamente!');
+    }
+});
         
         // Fallback se Firebase non si carica entro 3 secondi
         setTimeout(() => {
