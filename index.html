@@ -736,13 +736,20 @@
             }
             
             openEditDateModal(orderId) {
+                console.log('📝 Apertura modal modifica data per ordine:', orderId, typeof orderId);
+                
                 this.state.editingOrderId = orderId;
-                const order = this.state.orderHistory.find(o => o.id === orderId);
+                const order = this.state.orderHistory.find(o => String(o.id) === String(orderId));
                 
                 if (order) {
+                    console.log('✅ Ordine trovato:', order.id, new Date(order.timestamp).toLocaleString());
                     const dt = new Date(order.timestamp);
                     const iso = dt.toISOString().slice(0, 16);
                     document.getElementById('editDateInput').value = iso;
+                } else {
+                    console.error('❌ Ordine non trovato con ID:', orderId);
+                    alert('❌ Errore: ordine non trovato');
+                    return;
                 }
                 
                 const modal = document.getElementById('editDateModal');
@@ -765,16 +772,47 @@
                 }
                 
                 const newTs = new Date(dtVal).getTime();
-                const updated = this.state.orderHistory.map(o =>
-                    o.id === this.state.editingOrderId
-                        ? { ...o, timestamp: newTs, closedAt: newTs }
-                        : o
-                );
+                const targetId = this.state.editingOrderId;
+                
+                console.log('🔄 Modifica data ordine:', targetId, 'nuova data:', new Date(newTs).toLocaleString());
+                
+                // ✅ TROVA L'ORDINE SPECIFICO
+                const targetOrder = this.state.orderHistory.find(o => String(o.id) === String(targetId));
+                if (!targetOrder) {
+                    alert('❌ Errore: ordine non trovato');
+                    return;
+                }
+                
+                console.log('✅ Ordine da modificare trovato:', targetOrder.id, 'data attuale:', new Date(targetOrder.timestamp).toLocaleString());
+                
+                // ✅ CREA NUOVO ARRAY CON SOLO QUESTO ORDINE MODIFICATO
+                let modificati = 0;
+                const updated = this.state.orderHistory.map(order => {
+                    if (String(order.id) === String(targetId)) {
+                        modificati++;
+                        console.log('✅ Modifico ordine:', order.id);
+                        return { 
+                            ...order, 
+                            timestamp: newTs, 
+                            closedAt: newTs 
+                        };
+                    }
+                    return order; // ✅ TUTTI GLI ALTRI RESTANO IDENTICI
+                });
+                
+                // ✅ VERIFICA DI SICUREZZA
+                if (modificati !== 1) {
+                    console.error('❌ ERRORE: modificati', modificati, 'ordini invece di 1');
+                    alert(`❌ Errore: modificati ${modificati} ordini invece di 1. Operazione annullata.`);
+                    return;
+                }
+                
+                console.log('✅ Modifica completata - 1 ordine modificato su', updated.length);
                 
                 this.setState({ orderHistory: updated });
                 await firebaseService.update('orderHistory', updated);
                 this.cancelEditDateModal();
-                alert('✅ Data/ora aggiornata!');
+                alert('✅ Data/ora aggiornata solo per questo ordine!');
             }
             
             async saveFreeOrder() {
