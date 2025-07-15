@@ -923,7 +923,7 @@ async saveFreeOrder() {
         const isTakeAway = this.state.selectedTable === 999;
 
         const newOrder = {
-            id: Date.now(),
+            id: `${Date.now()}_${Math.random().toString(36).substr(2,5)}`,  // ✅ id unico!
             tableNumber: this.state.selectedTable,
             items: [...currentOrder],
             total: this.calculateTotal(),
