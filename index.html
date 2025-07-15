@@ -774,45 +774,88 @@
                 const newTs = new Date(dtVal).getTime();
                 const targetId = this.state.editingOrderId;
                 
-                console.log('🔄 Modifica data ordine:', targetId, 'nuova data:', new Date(newTs).toLocaleString());
+                console.log('🔄 INIZIO modifica data ordine:', targetId);
+                console.log('📊 Ordini PRIMA della modifica:', this.state.orderHistory.length);
                 
-                // ✅ TROVA L'ORDINE SPECIFICO
-                const targetOrder = this.state.orderHistory.find(o => String(o.id) === String(targetId));
-                if (!targetOrder) {
+                // ✅ TROVA L'ORDINE SPECIFICO PRIMA DI FARE QUALSIASI COSA
+                const targetOrderIndex = this.state.orderHistory.findIndex(o => String(o.id) === String(targetId));
+                if (targetOrderIndex === -1) {
                     alert('❌ Errore: ordine non trovato');
+                    console.error('❌ Ordine non trovato con ID:', targetId);
                     return;
                 }
                 
-                console.log('✅ Ordine da modificare trovato:', targetOrder.id, 'data attuale:', new Date(targetOrder.timestamp).toLocaleString());
+                const originalOrder = this.state.orderHistory[targetOrderIndex];
+                console.log('✅ Ordine da modificare trovato all\'indice:', targetOrderIndex);
+                console.log('📅 Data ORIGINALE:', new Date(originalOrder.timestamp).toLocaleString());
+                console.log('📅 Data NUOVA:', new Date(newTs).toLocaleString());
                 
-                // ✅ CREA NUOVO ARRAY CON SOLO QUESTO ORDINE MODIFICATO
+                // ✅ CREA COPIA COMPLETA DELL'ARRAY SENZA MODIFICARE L'ORIGINALE
+                const updatedHistory = [...this.state.orderHistory];
+                
+                // ✅ MODIFICA SOLO L'ORDINE SPECIFICO
+                updatedHistory[targetOrderIndex] = {
+                    ...originalOrder,
+                    timestamp: newTs,
+                    closedAt: newTs
+                };
+                
+                console.log('📊 Ordini DOPO la modifica:', updatedHistory.length);
+                console.log('✅ Verifico che sia cambiato solo 1 ordine...');
+                
+                // ✅ VERIFICA DI SICUREZZA - CONTA I CAMBIAMENTI
                 let modificati = 0;
-                const updated = this.state.orderHistory.map(order => {
-                    if (String(order.id) === String(targetId)) {
-                        modificati++;
-                        console.log('✅ Modifico ordine:', order.id);
-                        return { 
-                            ...order, 
-                            timestamp: newTs, 
-                            closedAt: newTs 
-                        };
-                    }
-                    return order; // ✅ TUTTI GLI ALTRI RESTANO IDENTICI
-                });
+                let nonModificati = 0;
                 
-                // ✅ VERIFICA DI SICUREZZA
+                for (let i = 0; i < this.state.orderHistory.length; i++) {
+                    const vecchio = this.state.orderHistory[i];
+                    const nuovo = updatedHistory[i];
+                    
+                    if (vecchio.timestamp !== nuovo.timestamp) {
+                        modificati++;
+                        console.log(`🔄 MODIFICATO ordine ${nuovo.id}: ${new Date(vecchio.timestamp).toLocaleString()} → ${new Date(nuovo.timestamp).toLocaleString()}`);
+                    } else {
+                        nonModificati++;
+                    }
+                }
+                
+                console.log(`📈 VERIFICA: ${modificati} modificati, ${nonModificati} non modificati`);
+                
+                // ✅ BLOCCA SE PIÙ DI 1 ORDINE È STATO MODIFICATO
                 if (modificati !== 1) {
-                    console.error('❌ ERRORE: modificati', modificati, 'ordini invece di 1');
-                    alert(`❌ Errore: modificati ${modificati} ordini invece di 1. Operazione annullata.`);
+                    console.error(`❌ ERRORE GRAVE: modificati ${modificati} ordini invece di 1!`);
+                    alert(`❌ ERRORE: modificati ${modificati} ordini invece di 1. Operazione ANNULLATA per sicurezza.`);
                     return;
                 }
                 
-                console.log('✅ Modifica completata - 1 ordine modificato su', updated.length);
+                console.log('✅ Verifica superata - procedo con l\'aggiornamento');
                 
-                this.setState({ orderHistory: updated });
-                await firebaseService.update('orderHistory', updated);
+                // ✅ PAUSA I LISTENER PER EVITARE INTERFERENZE
+                this.pauseListeners = true;
+                
+                // ✅ AGGIORNA LO STATO
+                this.setState({ orderHistory: updatedHistory });
+                
+                // ✅ AGGIORNA FIREBASE
+                try {
+                    await firebaseService.update('orderHistory', updatedHistory);
+                    console.log('✅ Firebase aggiornato con successo');
+                } catch (error) {
+                    console.error('❌ Errore aggiornamento Firebase:', error);
+                    alert('❌ Errore salvataggio su Firebase');
+                    return;
+                }
+                
+                // ✅ RIATTIVA I LISTENER DOPO UN SECONDO
+                setTimeout(() => {
+                    this.pauseListeners = false;
+                    console.log('✅ Listener riattivati');
+                }, 1000);
+                
                 this.cancelEditDateModal();
-                alert('✅ Data/ora aggiornata solo per questo ordine!');
+                alert('✅ Data/ora aggiornata SOLO per questo ordine!');
+                
+                console.log('🎉 Operazione completata con successo');
             }
             
             async saveFreeOrder() {
@@ -1858,7 +1901,44 @@
             renderHistoryView() {
                 console.log('🎯 RENDERING HISTORY VIEW - Ordini:', this.state.orderHistory.length);
                 
-                const groupedByDateTime = this.state.orderHistory.reduce((acc, order) => {
+                // ✅ RAGGRUPPAMENTO SICURO PER DATE
+                const groupedByDateTime = {};
+                
+                this.state.orderHistory.forEach((order, index) => {
+                    try {
+                        // ✅ GESTIONE SICURA DEL TIMESTAMP
+                        let ts;
+                        if (order.timestamp?.seconds) {
+                            ts = new Date(order.timestamp.seconds * 1000);
+                        } else if (order.timestamp) {
+                            ts = new Date(order.timestamp);
+                        } else {
+                            console.warn(`⚠️ Ordine ${order.id} senza timestamp valido`, order);
+                            ts = new Date(); // Fallback a oggi
+                        }
+                        
+                        const dateKey = ts.toLocaleDateString('it-IT');
+                        
+                        if (!groupedByDateTime[dateKey]) {
+                            groupedByDateTime[dateKey] = [];
+                        }
+                        
+                        // ✅ AGGIUNGI ORDINE ALLA DATA CORRETTA
+                        groupedByDateTime[dateKey].push({
+                            ...order,
+                            _originalIndex: index,
+                            _parsedDate: ts
+                        });
+                        
+                    } catch (error) {
+                        console.error(`❌ Errore processando ordine ${order.id}:`, error, order);
+                    }
+                });
+                
+                console.log('📊 Raggruppamento completato:', Object.keys(groupedByDateTime).length, 'date');
+                Object.entries(groupedByDateTime).forEach(([date, orders]) => {
+                    console.log(`📅 ${date}: ${orders.length} ordini`);
+                });
                     const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
                     
                     // Raggruppa per data esatta di apertura
@@ -2009,6 +2089,35 @@
                             console.log('🚨 FORCE TABLES VIEW');
                             window.app.state.currentView = 'tables';
                             window.app.render();
+                        };
+                        
+                        // ✅ DEBUG MODIFICA DATE - verifica cosa succede
+                        window.debugOrderDates = () => {
+                            console.log('🔍 DEBUG ORDINI E DATE:');
+                            window.app.state.orderHistory.forEach((order, index) => {
+                                const date = new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp);
+                                console.log(`${index}: ID=${order.id}, Data=${date.toLocaleDateString('it-IT')}, Timestamp=${order.timestamp}`);
+                            });
+                        };
+                        
+                        // ✅ VERIFICA INTEGRITÀ DOPO MODIFICA
+                        window.verifyOrderIntegrity = () => {
+                            const orders = window.app.state.orderHistory;
+                            console.log('🔍 VERIFICA INTEGRITÀ:');
+                            console.log(`Totale ordini: ${orders.length}`);
+                            
+                            const groupByDate = {};
+                            orders.forEach(order => {
+                                const date = new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp).toLocaleDateString('it-IT');
+                                if (!groupByDate[date]) groupByDate[date] = [];
+                                groupByDate[date].push(order.id);
+                            });
+                            
+                            Object.entries(groupByDate).forEach(([date, orderIds]) => {
+                                console.log(`📅 ${date}: ${orderIds.length} ordini - IDs: ${orderIds.join(', ')}`);
+                            });
+                            
+                            return groupByDate;
                         };
             } catch (error) {
                 console.error('❌ ERRORE creazione app:', error);
