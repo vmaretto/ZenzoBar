@@ -162,6 +162,7 @@
     
     <script>
         console.log('🚀 Script iniziato');
+        
         // Firebase Service
         class FirebaseService {
             constructor() {
@@ -390,7 +391,7 @@
                     tableCount: 8,
                     customTables: [],
                     editingTable: null,
-                    editingOrderId: null, // ✅ Aggiunto campo per editingOrderId
+                    editingOrderId: null,
                     isOnline: true,
                     syncStatus: 'Inizializzazione...',
                     customMenuData: null,
@@ -401,7 +402,7 @@
                     activeTab: 'menu', 
                     discount: 0,
                     showAIModal: false,
-                    manualOrderDateTime: '' // ✅ Aggiunto campo per datetime manuale
+                    manualOrderDateTime: ''
                 };
                 
                 this.init();
@@ -410,19 +411,18 @@
             init() {
                 console.log('🔧 Init ZenzoBarApp');
                 this.setupFirebaseListeners();
-                this.addTestData(); // ✅ Aggiunge dati di test
+                this.addTestData();
                 this.hideAllModals();
                 this.render();
                 
                 setInterval(() => {
                     const online = firebaseService.getConnectionState();
                     if (this.state.isOnline !== online) {
-                        this.setState(Object.assign({}, this.state, { isOnline: online }));
+                        this.setState({ isOnline: online });
                     }
                 }, 5000);
             }
             
-            // ✅ Metodo per aggiungere dati di test nello storico
             addTestData() {
                 if (this.state.orderHistory.length === 0) {
                     const testOrders = [
@@ -434,8 +434,8 @@
                                 { name: 'Cornetto vuoto', price: 1.5, quantity: 1 }
                             ],
                             total: 4.2,
-                            timestamp: Date.now() - 3600000, // 1 ora fa
-                            closedAt: Date.now() - 3000000, // 50 min fa
+                            timestamp: Date.now() - 3600000,
+                            closedAt: Date.now() - 3000000,
                             state: 'paid',
                             closedBy: 'waiter'
                         },
@@ -447,8 +447,8 @@
                                 { name: 'Hulky', price: 7, quantity: 2 }
                             ],
                             total: 29,
-                            timestamp: Date.now() - 7200000, // 2 ore fa
-                            closedAt: Date.now() - 6600000, // 1h50m fa
+                            timestamp: Date.now() - 7200000,
+                            closedAt: Date.now() - 6600000,
                             state: 'paid',
                             closedBy: 'kitchen'
                         }
@@ -469,84 +469,118 @@
                 });
             }
             
+            // ✅ FIREBASE LISTENERS CORRETTI - NON SOVRASCRIVONO LO STATO UI
             setupFirebaseListeners() {
-    this.setState({ syncStatus: '🔄 Connessione Firebase...' });
-    
-    try {
-        firebaseService.onSnapshot('orders', (data) => {
-            // ✅ MANTIENI currentView e altri stati UI
-            this.setState({ 
-                orders: data || {}, 
-                syncStatus: '🔥 Sincronizzato Firebase'
-            });
-        });
-        
-        firebaseService.onSnapshot('activeOrders', (data) => {
-            // ✅ SOLO activeOrders, non toccare il resto
-            this.setState({ 
-                activeOrders: Array.isArray(data) ? data : []
-            });
-        });
-        
-        firebaseService.onSnapshot('orderHistory', (data) => {
-            // ✅ SOLO orderHistory, non toccare il resto
-            if (Array.isArray(data) && data.length > 0) {
-                this.setState({ 
-                    orderHistory: data 
-                });
-            }
-        });
-        
-        firebaseService.onSnapshot('tables', (data) => {
-            // ✅ SOLO tables, non toccare il resto
-            if (Array.isArray(data)) {
-                const hasTakeAway = data.some(t => t.id === 999);
-                if (!hasTakeAway) {
-                    data.push({ id: 999, number: 'Take Away', seats: 0 });
+                this.setState({ syncStatus: '🔄 Connessione Firebase...' });
+                
+                try {
+                    // ✅ Throttling dei listeners per evitare chiamate eccessive
+                    let ordersTimeout, activeOrdersTimeout, historyTimeout, tablesTimeout, menuTimeout;
+                    
+                    firebaseService.onSnapshot('orders', (data) => {
+                        clearTimeout(ordersTimeout);
+                        ordersTimeout = setTimeout(() => {
+                            // SOLO aggiorna orders, NON toccare currentView o altri stati UI
+                            this.updateStateField('orders', data || {});
+                            this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
+                        }, 100);
+                    });
+                    
+                    firebaseService.onSnapshot('activeOrders', (data) => {
+                        clearTimeout(activeOrdersTimeout);
+                        activeOrdersTimeout = setTimeout(() => {
+                            this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
+                        }, 100);
+                    });
+                    
+                    firebaseService.onSnapshot('orderHistory', (data) => {
+                        clearTimeout(historyTimeout);
+                        historyTimeout = setTimeout(() => {
+                            if (Array.isArray(data) && data.length > 0) {
+                                this.updateStateField('orderHistory', data);
+                            }
+                        }, 100);
+                    });
+                    
+                    firebaseService.onSnapshot('tables', (data) => {
+                        clearTimeout(tablesTimeout);
+                        tablesTimeout = setTimeout(() => {
+                            if (Array.isArray(data)) {
+                                const hasTakeAway = data.some(t => t.id === 999);
+                                if (!hasTakeAway) {
+                                    data.push({ id: 999, number: 'Take Away', seats: 0 });
+                                }
+                                this.updateStateField('customTables', data);
+                            }
+                        }, 100);
+                    });
+                    
+                    firebaseService.onSnapshot('menuData', (data) => {
+                        clearTimeout(menuTimeout);
+                        menuTimeout = setTimeout(() => {
+                            this.updateStateField('customMenuData', data);
+                        }, 100);
+                    });
+                    
+                } catch (error) {
+                    console.error('Errore setup Firebase listeners:', error);
+                    this.setState({ syncStatus: '❌ Errore connessione' });
                 }
-                this.setState({ 
-                    customTables: data 
-                });
             }
-        });
-        
-        firebaseService.onSnapshot('menuData', (data) => {
-            // ✅ SOLO menuData, non toccare il resto
-            this.setState({ 
-                customMenuData: data 
-            });
-        });
-        
-    } catch (error) {
-        console.error('Errore setup Firebase listeners:', error);
-        this.setState({ syncStatus: '❌ Errore connessione' });
-    }
-}
+            
+            // ✅ METODO HELPER PER AGGIORNARE SINGOLI CAMPI SENZA TRIGGER RE-RENDER
+            updateStateField(field, value) {
+                // Aggiorna solo il campo specifico senza chiamare render se non necessario
+                if (this.state[field] !== value) {
+                    this.state[field] = value;
+                    
+                    // Solo se stiamo aggiornando dati visibili, fare re-render
+                    if (this.isFieldVisible(field)) {
+                        this.render();
+                    }
+                }
+            }
+            
+            isFieldVisible(field) {
+                switch(this.state.currentView) {
+                    case 'tables':
+                        return ['orders', 'activeOrders', 'customTables', 'syncStatus'].includes(field);
+                    case 'menu':
+                        return ['orders', 'customMenuData'].includes(field);
+                    case 'kitchen':
+                        return ['activeOrders'].includes(field);
+                    case 'history':
+                        return ['orderHistory'].includes(field);
+                    default:
+                        return true;
+                }
+            }
             
             setState(newState) {
-    console.log('🔄 setState chiamato con:', newState);
-    console.log('🔄 State precedente:', this.state.currentView);
-    
-    const scrollTarget = document.getElementById('menuScrollable');
-    const savedScrollTop = scrollTarget?.scrollTop || 0;
-    const oldExpandedCategories = this.state.expandedCategories;
-    this.state = { ...this.state, ...newState };
-    if (!newState.hasOwnProperty('expandedCategories')) {
-        this.state.expandedCategories = oldExpandedCategories;
-    }
-    
-    console.log('🔄 Nuovo state:', this.state.currentView);
-    console.log('🔄 Chiamando render...');
-    
-    this.render();
-    
-    requestAnimationFrame(() => {
-        const newScrollTarget = document.getElementById('menuScrollable');
-        if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
-    });
-    
-    console.log('✅ setState completato');
-}
+                console.log('🔄 setState chiamato con:', newState);
+                console.log('🔄 State precedente:', this.state.currentView);
+                
+                const scrollTarget = document.getElementById('menuScrollable');
+                const savedScrollTop = scrollTarget?.scrollTop || 0;
+                const oldExpandedCategories = this.state.expandedCategories;
+                
+                this.state = { ...this.state, ...newState };
+                if (!newState.hasOwnProperty('expandedCategories')) {
+                    this.state.expandedCategories = oldExpandedCategories;
+                }
+                
+                console.log('🔄 Nuovo state:', this.state.currentView);
+                console.log('🔄 Chiamando render...');
+                
+                this.render();
+                
+                requestAnimationFrame(() => {
+                    const newScrollTarget = document.getElementById('menuScrollable');
+                    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
+                });
+                
+                console.log('✅ setState completato');
+            }
             
             render() {
                 console.log('🎨 Rendering vista:', this.state.currentView);
@@ -694,14 +728,13 @@
             
             // METODI PER ORDINE LIBERO
             showFreeOrderModal() {
-                // ✅ Imposta la data/ora corrente di default
                 const now = new Date();
                 const isoNow = now.toISOString().slice(0, 16);
                 
                 document.getElementById('freeItemName').value = '';
                 document.getElementById('freeItemPrice').value = '';
                 document.getElementById('freeItemNote').value = '';
-                document.getElementById('freeOrderDateTime').value = isoNow; // ✅ Imposta datetime corrente
+                document.getElementById('freeOrderDateTime').value = isoNow;
                 
                 document.getElementById('freeOrderModal').classList.remove('hidden');
                 document.getElementById('freeOrderModal').style.display = 'flex';
@@ -713,9 +746,8 @@
                 document.getElementById('freeOrderModal').style.display = 'none';
             }
             
-            // ✅ METODI PER MODIFICA DATA/ORA - Corretti
             openEditDateModal(orderId) {
-                this.state.editingOrderId = orderId; // ✅ Salva correttamente l'ID
+                this.state.editingOrderId = orderId;
                 const order = this.state.orderHistory.find(o => o.id === orderId);
                 
                 if (order) {
@@ -733,7 +765,7 @@
             cancelEditDateModal() {
                 document.getElementById('editDateModal').classList.add('hidden');
                 document.getElementById('editDateModal').style.display = 'none';
-                this.state.editingOrderId = null; // ✅ Reset ID
+                this.state.editingOrderId = null;
             }
             
             async saveEditedDate() {
@@ -756,12 +788,11 @@
                 alert('✅ Data/ora aggiornata!');
             }
             
-            // ✅ ORDINE LIBERO - Corretto
             async saveFreeOrder() {
                 const name = document.getElementById('freeItemName').value.trim();
                 const price = parseFloat(document.getElementById('freeItemPrice').value) || 0;
                 const note = document.getElementById('freeItemNote').value.trim();
-                const dtVal = document.getElementById('freeOrderDateTime').value; // ✅ Campo corretto
+                const dtVal = document.getElementById('freeOrderDateTime').value;
                 const timestamp = dtVal ? new Date(dtVal).getTime() : Date.now();
                 
                 if (!name) {
@@ -787,7 +818,6 @@
                 this.cancelFreeOrder();
             }
             
-            // ✅ Update manual order datetime
             updateManualOrderDateTime(value) {
                 this.setState({ manualOrderDateTime: value });
             }
@@ -958,10 +988,8 @@
                 
                 this.setState({ syncStatus: '🔄 Invio in cucina...' });
                 
-                // ✅ Gestione timestamp corretta
                 let ts;
                 if (this.state.selectedTable === 999) {
-                    // Take Away - usa manualOrderDateTime dallo stato
                     ts = this.state.manualOrderDateTime ? new Date(this.state.manualOrderDateTime).getTime() : Date.now();
                     console.log('🔖 Manual order timestamp:', new Date(ts).toLocaleString());
                 } else {
@@ -985,12 +1013,12 @@
                     
                     if (isTakeAway) {
                         const updatedHistory = [newOrder, ...this.state.orderHistory];
-                        this.setState({ orderHistory: updatedHistory });
+                        this.setState({ orderHistory: updatedHistory, manualOrderDateTime: '' });
                         await firebaseService.update('orderHistory', updatedHistory);
                         
                         const clearedOrders = { ...this.state.orders };
                         delete clearedOrders[this.state.selectedTable];
-                        this.setState({ orders: clearedOrders, manualOrderDateTime: '' }); // ✅ Reset datetime
+                        this.setState({ orders: clearedOrders });
                         await firebaseService.update('orders', clearedOrders);
                         
                         alert('✅ Take Away registrato nello storico!');
@@ -1004,7 +1032,7 @@
                     
                     const cleared = { ...this.state.orders };
                     delete cleared[this.state.selectedTable];
-                    this.setState({ orders: cleared, manualOrderDateTime: '' }); // ✅ Reset datetime
+                    this.setState({ orders: cleared, manualOrderDateTime: '' });
                     await firebaseService.update('orders', cleared);
                     
                     this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
@@ -1372,27 +1400,13 @@
                                 <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ⚙️ Configura
                                 </button>
-                                // SOSTITUISCILA con questa versione DEBUG:
-<button onclick="
-    console.log('🔥 CLICK STORICO!'); 
-    console.log('🔍 App object exists:', typeof app !== 'undefined'); 
-    console.log('🔍 App object:', app);
-    console.log('🔍 setState method exists:', app && typeof app.setState === 'function');
-    console.log('🔍 Current state before:', app ? app.state : 'APP NOT FOUND');
-    try {
-        if (app && app.setState) {
-            app.setState({currentView: 'history'});
-            console.log('✅ setState chiamato con successo');
-            console.log('🔍 State dopo setState:', app.state);
-        } else {
-            console.error('❌ App o setState non disponibili');
-        }
-    } catch(e) {
-        console.error('❌ ERRORE durante setState:', e);
-    }
-" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-    🕐 Storico DEBUG
-</button>
+                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    🕐 Storico
+                                    ${this.state.orderHistory.length > 0 ? 
+                                        `<span class="bg-yellow-400 text-blue-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
+                                        : ''
+                                    }
+                                </button>
                             </div>
                         </div>
                         
@@ -1908,20 +1922,15 @@
         
         setTimeout(() => {
             try {
-                console.log('🚀 Creazione ZenzoBarApp completa...');
-               try {
-    console.log('🚀 INIZIO creazione ZenzoBarApp...');
-    window.app = new ZenzoBarApp();
-    console.log('✅ App creata con successo:', window.app);
-    console.log('✅ setState disponibile:', typeof window.app.setState);
-    console.log('✅ State iniziale:', window.app.state);
-} catch(error) {
-    console.error('❌ ERRORE creazione app:', error);
-    console.error('❌ Stack trace:', error.stack);
-}
+                console.log('🚀 INIZIO creazione ZenzoBarApp...');
+                window.app = new ZenzoBarApp();
+                console.log('✅ App creata con successo:', window.app);
+                console.log('✅ setState disponibile:', typeof window.app.setState);
+                console.log('✅ State iniziale:', window.app.state);
                 console.log('✅ App completa inizializzata con successo!');
             } catch (error) {
-                console.error('❌ Errore creazione app completa:', error);
+                console.error('❌ ERRORE creazione app:', error);
+                console.error('❌ Stack trace:', error.stack);
                 
                 // Fallback di emergenza
                 document.getElementById('app').innerHTML = `
