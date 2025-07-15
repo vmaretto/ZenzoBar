@@ -391,7 +391,7 @@
                     tableCount: 8,
                     customTables: [],
                     editingTable: null,
-                    editingOrderId: null,
+                    editingOrder: null, // ✅ CAMBIO DA editingOrderId a editingOrder
                     isOnline: true,
                     syncStatus: 'Inizializzazione...',
                     customMenuData: null,
@@ -443,7 +443,7 @@
                 console.log('🧪 Caricamento dati test iniziali...');
                 const testOrders = [
                     {
-                        id: 'test_1',
+                        id: `order_${Date.now() - 3600000}_1_001`, // ✅ ID CONSISTENTE
                         tableNumber: 1,
                         items: [
                             { name: 'Caffè', price: 1.2, quantity: 2 },
@@ -736,19 +736,24 @@
             }
             
             openEditDateModal(orderId) {
-                // Assicurati che l'ID sia una stringa per confronti consistenti
-                this.state.editingOrderId = String(orderId);
-                const order = this.state.orderHistory.find(o => String(o.id) === String(orderId));
+                console.log('🔍 Apertura modal modifica per ID:', orderId);
                 
-                if (order) {
-                    const dt = new Date(order.timestamp);
-                    const iso = dt.toISOString().slice(0, 16);
-                    document.getElementById('editDateInput').value = iso;
-                } else {
+                // ✅ TROVA ORDINE DIRETTAMENTE 
+                const order = this.state.orderHistory.find(o => o.id === orderId);
+                
+                if (!order) {
                     console.error('❌ Ordine non trovato per ID:', orderId);
                     alert('❌ Errore: ordine non trovato');
                     return;
                 }
+                
+                // ✅ SALVA L'ORDINE COMPLETO, NON SOLO L'ID
+                this.state.editingOrder = order;
+                console.log('✅ Ordine da modificare salvato:', order);
+                
+                const dt = new Date(order.timestamp);
+                const iso = dt.toISOString().slice(0, 16);
+                document.getElementById('editDateInput').value = iso;
                 
                 const modal = document.getElementById('editDateModal');
                 modal.classList.remove('hidden');
@@ -759,7 +764,7 @@
             cancelEditDateModal() {
                 document.getElementById('editDateModal').classList.add('hidden');
                 document.getElementById('editDateModal').style.display = 'none';
-                this.state.editingOrderId = null;
+                this.state.editingOrder = null; // ✅ PULISCI IL RIFERIMENTO
             }
             
             async saveEditedDate() {
@@ -769,19 +774,26 @@
                     return;
                 }
                 
-                const newTs = new Date(dtVal).getTime();
-                console.log('🔍 Editing order ID:', this.state.editingOrderId);
-                console.log('🔍 New timestamp:', newTs, new Date(newTs));
+                if (!this.state.editingOrder) {
+                    alert('❌ Errore: nessun ordine selezionato');
+                    return;
+                }
                 
-                const updated = this.state.orderHistory.map(o => {
-                    const match = String(o.id) === String(this.state.editingOrderId);
-                    console.log('🔍 Comparing:', String(o.id), '===', String(this.state.editingOrderId), '→', match);
-                    
-                    return match
-                        ? { ...o, timestamp: newTs, closedAt: newTs }
-                        : o;
+                const newTs = new Date(dtVal).getTime();
+                console.log('🔍 Modifica ordine:', this.state.editingOrder.id);
+                console.log('🔍 Nuovo timestamp:', newTs, new Date(newTs));
+                
+                // ✅ APPROCCIO SEMPLICE: TROVA E SOSTITUISCI L'ORDINE ESATTO
+                const updated = this.state.orderHistory.map(order => {
+                    // Confronto diretto con l'ordine salvato
+                    if (order === this.state.editingOrder || order.id === this.state.editingOrder.id) {
+                        console.log('✅ Trovato ordine da modificare:', order.id);
+                        return { ...order, timestamp: newTs, closedAt: newTs };
+                    }
+                    return order;
                 });
                 
+                console.log('✅ Aggiornamento completato');
                 this.setState({ orderHistory: updated });
                 await firebaseService.update('orderHistory', updated);
                 this.cancelEditDateModal();
@@ -805,7 +817,7 @@
                 }
                 
                 const freeItem = {
-                    id: `free_${Date.now()}`,
+                    id: `freeorder_${Date.now()}_${Math.floor(Math.random() * 1000)}`, // ✅ ID CONSISTENTE
                     name: name,
                     price: price,
                     ingredients: '',
@@ -998,8 +1010,11 @@
                 
                 try {
                     const isTakeAway = this.state.selectedTable === 999;
+                    // ✅ ID UNICO SEMPLICE E GARANTITO
+                    const uniqueId = `order_${Date.now()}_${this.state.selectedTable}_${Math.floor(Math.random() * 1000)}`;
+                    
                     const newOrder = {
-                        id: `${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
+                        id: uniqueId,
                         tableNumber: this.state.selectedTable,
                         items: [...currentOrder],
                         total: this.calculateTotal(),
@@ -1081,6 +1096,7 @@
                 const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == orderToClose.tableNumber);
                 const closedOrders = ordersToClose.map(o => ({
                     ...o,
+                    id: o.id.startsWith('order_') ? o.id : `order_${Date.now()}_${o.tableNumber}_${Math.floor(Math.random() * 1000)}`, // ✅ ASSICURA ID CONSISTENTE
                     state: 'paid',
                     closedAt: Date.now(),
                     closedBy: 'kitchen'
@@ -1106,6 +1122,7 @@
                 if (!conferma) return;
                 const closedOrders = ordersToClose.map(o => ({
                     ...o,
+                    id: o.id.startsWith('order_') ? o.id : `order_${Date.now()}_${o.tableNumber}_${Math.floor(Math.random() * 1000)}`, // ✅ ASSICURA ID CONSISTENTE
                     state: 'paid',
                     closedAt: Date.now(),
                     closedBy: 'waiter'
