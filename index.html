@@ -405,13 +405,23 @@
                     manualOrderDateTime: ''
                 };
                 
+                // ✅ Flag per prevenire interferenze durante cambio vista
+                this.isViewChanging = false;
+                
                 this.init();
             }
             
             init() {
                 console.log('🔧 Init ZenzoBarApp');
+                
+                // ✅ Setup listeners PRIMA di caricare dati test
                 this.setupFirebaseListeners();
-                this.addTestData();
+                
+                // ✅ Attendi un momento per vedere se Firebase ha dati
+                setTimeout(() => {
+                    this.addTestData();
+                }, 500);
+                
                 this.hideAllModals();
                 this.render();
                 
@@ -424,37 +434,29 @@
             }
             
             addTestData() {
-                if (this.state.orderHistory.length === 0) {
-                    const testOrders = [
-                        {
-                            id: 'test_1',
-                            tableNumber: 1,
-                            items: [
-                                { name: 'Caffè', price: 1.2, quantity: 2 },
-                                { name: 'Cornetto vuoto', price: 1.5, quantity: 1 }
-                            ],
-                            total: 4.2,
-                            timestamp: Date.now() - 3600000,
-                            closedAt: Date.now() - 3000000,
-                            state: 'paid',
-                            closedBy: 'waiter'
-                        },
-                        {
-                            id: 'test_2',
-                            tableNumber: 3,
-                            items: [
-                                { name: 'CHIOSCO AL MARE', price: 15, quantity: 1 },
-                                { name: 'Hulky', price: 7, quantity: 2 }
-                            ],
-                            total: 29,
-                            timestamp: Date.now() - 7200000,
-                            closedAt: Date.now() - 6600000,
-                            state: 'paid',
-                            closedBy: 'kitchen'
-                        }
-                    ];
-                    this.setState({ orderHistory: testOrders });
+                // ✅ NON caricare dati test se Firebase è inizializzato o ci sono già dati
+                if (firebaseService.isInitialized || this.state.orderHistory.length > 0) {
+                    console.log('🚫 Skip dati test - Firebase attivo o dati già presenti');
+                    return;
                 }
+                
+                console.log('🧪 Caricamento dati test iniziali...');
+                const testOrders = [
+                    {
+                        id: 'test_1',
+                        tableNumber: 1,
+                        items: [
+                            { name: 'Caffè', price: 1.2, quantity: 2 },
+                            { name: 'Cornetto vuoto', price: 1.5, quantity: 1 }
+                        ],
+                        total: 4.2,
+                        timestamp: Date.now() - 3600000,
+                        closedAt: Date.now() - 3000000,
+                        state: 'paid',
+                        closedBy: 'waiter'
+                    }
+                ];
+                this.setState({ orderHistory: testOrders });
             }
             
             hideAllModals() {
@@ -474,52 +476,36 @@
                 this.setState({ syncStatus: '🔄 Connessione Firebase...' });
                 
                 try {
-                    // ✅ Throttling dei listeners per evitare chiamate eccessive
-                    let ordersTimeout, activeOrdersTimeout, historyTimeout, tablesTimeout, menuTimeout;
-                    
+                    // ✅ LISTENER SINGOLI SENZA THROTTLING ECCESSIVO
                     firebaseService.onSnapshot('orders', (data) => {
-                        clearTimeout(ordersTimeout);
-                        ordersTimeout = setTimeout(() => {
-                            // SOLO aggiorna orders, NON toccare currentView o altri stati UI
-                            this.updateStateField('orders', data || {});
-                            this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
-                        }, 100);
+                        // Solo aggiorna orders, NON toccare currentView o altri stati UI
+                        this.updateStateField('orders', data || {});
+                        this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
                     });
                     
                     firebaseService.onSnapshot('activeOrders', (data) => {
-                        clearTimeout(activeOrdersTimeout);
-                        activeOrdersTimeout = setTimeout(() => {
-                            this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
-                        }, 100);
+                        this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
                     });
                     
                     firebaseService.onSnapshot('orderHistory', (data) => {
-                        clearTimeout(historyTimeout);
-                        historyTimeout = setTimeout(() => {
-                            if (Array.isArray(data) && data.length > 0) {
-                                this.updateStateField('orderHistory', data);
-                            }
-                        }, 100);
+                        if (Array.isArray(data) && data.length > 0) {
+                            console.log(`📊 Firebase orderHistory caricato: ${data.length} ordini`);
+                            this.updateStateField('orderHistory', data);
+                        }
                     });
                     
                     firebaseService.onSnapshot('tables', (data) => {
-                        clearTimeout(tablesTimeout);
-                        tablesTimeout = setTimeout(() => {
-                            if (Array.isArray(data)) {
-                                const hasTakeAway = data.some(t => t.id === 999);
-                                if (!hasTakeAway) {
-                                    data.push({ id: 999, number: 'Take Away', seats: 0 });
-                                }
-                                this.updateStateField('customTables', data);
+                        if (Array.isArray(data)) {
+                            const hasTakeAway = data.some(t => t.id === 999);
+                            if (!hasTakeAway) {
+                                data.push({ id: 999, number: 'Take Away', seats: 0 });
                             }
-                        }, 100);
+                            this.updateStateField('customTables', data);
+                        }
                     });
                     
                     firebaseService.onSnapshot('menuData', (data) => {
-                        clearTimeout(menuTimeout);
-                        menuTimeout = setTimeout(() => {
-                            this.updateStateField('customMenuData', data);
-                        }, 100);
+                        this.updateStateField('customMenuData', data);
                     });
                     
                 } catch (error) {
@@ -528,16 +514,19 @@
                 }
             }
             
-            // ✅ METODO HELPER PER AGGIORNARE SINGOLI CAMPI SENZA TRIGGER RE-RENDER
+            // ✅ METODO HELPER PER AGGIORNARE SINGOLI CAMPI SENZA INTERFERENZE
             updateStateField(field, value) {
                 // Aggiorna solo il campo specifico senza chiamare render se non necessario
-                if (this.state[field] !== value) {
-                    this.state[field] = value;
-                    
-                    // Solo se stiamo aggiornando dati visibili, fare re-render
-                    if (this.isFieldVisible(field)) {
-                        this.render();
-                    }
+                if (JSON.stringify(this.state[field]) === JSON.stringify(value)) {
+                    return; // Nessun cambiamento, skip
+                }
+                
+                console.log(`🔄 updateStateField: ${field}`, value?.length ? `(${value.length} items)` : value);
+                this.state[field] = value;
+                
+                // ✅ Solo se stiamo aggiornando dati visibili nella vista corrente, fare re-render
+                if (this.isFieldVisible(field) && !this.isViewChanging) {
+                    this.render();
                 }
             }
             
@@ -560,6 +549,12 @@
                 console.log('🔄 setState chiamato con:', newState);
                 console.log('🔄 State precedente:', this.state.currentView);
                 
+                // ✅ PROTEZIONE CONTRO INTERFERENZE DURANTE CAMBIO VISTA
+                if (newState.currentView && newState.currentView !== this.state.currentView) {
+                    console.log('📍 Cambio vista rilevato:', this.state.currentView, '→', newState.currentView);
+                    this.isViewChanging = true;
+                }
+                
                 const scrollTarget = document.getElementById('menuScrollable');
                 const savedScrollTop = scrollTarget?.scrollTop || 0;
                 const oldExpandedCategories = this.state.expandedCategories;
@@ -573,6 +568,12 @@
                 console.log('🔄 Chiamando render...');
                 
                 this.render();
+                
+                // ✅ RESET FLAG CAMBIO VISTA DOPO RENDER
+                setTimeout(() => {
+                    this.isViewChanging = false;
+                    console.log('✅ Cambio vista completato');
+                }, 200);
                 
                 requestAnimationFrame(() => {
                     const newScrollTarget = document.getElementById('menuScrollable');
