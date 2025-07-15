@@ -461,7 +461,7 @@
             
             hideAllModals() {
                 console.log('🔒 Nascondo tutti i modal');
-                const modalIds = ['noteModal', 'aiAnalyticsModal', 'guestCountModal', 'editDateModal', 'freeOrderModal'];
+                const modalIds = ['noteModal', 'guestCountModal', 'editDateModal', 'freeOrderModal'];
                 modalIds.forEach(id => {
                     const modal = document.getElementById(id);
                     if (modal) {
@@ -469,6 +469,15 @@
                         modal.style.display = 'none';
                     }
                 });
+                
+                // ✅ NON nascondere il modal AI se dovrebbe essere visibile
+                if (!this.state.showAIModal) {
+                    const aiModal = document.getElementById('aiAnalyticsModal');
+                    if (aiModal) {
+                        aiModal.classList.add('hidden');
+                        aiModal.style.display = 'none';
+                    }
+                }
             }
             
             // ✅ FIREBASE LISTENERS SEMPLIFICATI
@@ -836,28 +845,84 @@
             
             // METODI AI
             async showAIAnalytics() {
+                console.log('🤖 Apertura AI Analytics...');
+                
+                // ✅ Prima imposta lo state per mostrare il modal
                 this.setState({ showAIModal: true });
                 
                 const modal = document.getElementById('aiAnalyticsModal');
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.display = 'flex';
+                    console.log('✅ Modal AI mostrato');
+                } else {
+                    console.error('❌ Modal AI non trovato nel DOM');
+                    return;
+                }
                 
-                const analysis = await aiService.analyzeOrderData(this.state.orderHistory);
-                
-                this.setState({ aiAnalysis: analysis });
-                this.renderAIAnalytics();
+                // ✅ Poi fai l'analisi
+                try {
+                    console.log('🔍 Inizio analisi dati...', this.state.orderHistory.length, 'ordini');
+                    const analysis = await aiService.analyzeOrderData(this.state.orderHistory);
+                    console.log('✅ Analisi completata:', analysis);
+                    
+                    this.setState({ aiAnalysis: analysis });
+                    this.renderAIAnalytics();
+                } catch (error) {
+                    console.error('❌ Errore durante analisi AI:', error);
+                    
+                    // Mostra messaggio di errore nel modal
+                    const content = document.getElementById('aiAnalyticsContent');
+                    if (content) {
+                        content.innerHTML = `
+                            <div class="text-center py-8">
+                                <div class="text-6xl mb-4">❌</div>
+                                <p class="text-xl text-red-600">Errore durante l'analisi</p>
+                                <p class="text-gray-600 mt-2">${error.message}</p>
+                                <button onclick="app.closeAIModal()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                    Chiudi
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
             }
             
             closeAIModal() {
-                document.getElementById('aiAnalyticsModal').classList.add('hidden');
-                document.getElementById('aiAnalyticsModal').style.display = 'none';
-                this.setState({ showAIModal: false });
+                console.log('🔒 Chiusura AI Analytics Modal...');
+                
+                const modal = document.getElementById('aiAnalyticsModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+                    console.log('✅ Modal AI nascosto');
+                }
+                
+                this.setState({ showAIModal: false, aiAnalysis: null });
+                console.log('✅ State AI pulito');
             }
             
             renderAIAnalytics() {
                 const content = document.getElementById('aiAnalyticsContent');
-                if (!this.state.aiAnalysis) return;
+                if (!content) {
+                    console.error('❌ aiAnalyticsContent non trovato nel DOM');
+                    return;
+                }
+                
+                if (!this.state.aiAnalysis) {
+                    console.error('❌ Nessuna analisi AI disponibile');
+                    content.innerHTML = `
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+                            <p class="mt-4 text-gray-600">Claude sta analizzando i tuoi dati...</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
                 const { summary, insights, recommendations } = this.state.aiAnalysis;
+                console.log('📊 Rendering AI Analytics con:', summary);
+                
                 content.innerHTML = `
                     <div class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -878,6 +943,27 @@
                                 <div class="text-sm text-orange-600">Top Items</div>
                             </div>
                         </div>
+                        
+                        ${summary.topSellingItems.length > 0 ? `
+                            <div class="bg-white p-6 rounded-lg border">
+                                <h4 class="text-lg font-bold mb-4">🏆 Top Selling Items</h4>
+                                <div class="grid gap-3">
+                                    ${summary.topSellingItems.map((item, index) => `
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                                            <div class="flex items-center gap-3">
+                                                <span class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${index + 1}</span>
+                                                <span class="font-medium">${item.name}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold text-green-600">€${item.revenue.toFixed(2)}</div>
+                                                <div class="text-xs text-gray-500">${item.quantity} venduti</div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
                         <div class="bg-white p-6 rounded-lg border">
                             <h4 class="text-lg font-bold mb-4">🔍 Insights AI</h4>
                             <div class="grid gap-4">
@@ -894,6 +980,7 @@
                                 `).join('')}
                             </div>
                         </div>
+                        
                         <div class="bg-white p-6 rounded-lg border">
                             <h4 class="text-lg font-bold mb-4">💡 Raccomandazioni AI</h4>
                             <div class="grid gap-4">
@@ -911,6 +998,8 @@
                         </div>
                     </div>
                 `;
+                
+                console.log('✅ AI Analytics renderizzato con successo');
             }
             
             async addToOrder(item, note = '') {
