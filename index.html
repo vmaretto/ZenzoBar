@@ -470,58 +470,58 @@
             }
             
             setupFirebaseListeners() {
-                this.setState({ syncStatus: '🔄 Connessione Firebase...' });
-                
-                try {
-                    firebaseService.onSnapshot('orders', (data) => {
-                        this.setState({ 
-                            ...this.state,
-                            orders: data || {}, 
-                            syncStatus: '🔥 Sincronizzato Firebase'
-                        });
-                    });
-                    
-                    firebaseService.onSnapshot('activeOrders', (data) => {
-                        this.setState({ 
-                            ...this.state,
-                            activeOrders: Array.isArray(data) ? data : []
-                        });
-                    });
-                    
-                    firebaseService.onSnapshot('orderHistory', (data) => {
-                        if (Array.isArray(data) && data.length > 0) {
-                            this.setState({ 
-                                ...this.state,
-                                orderHistory: data 
-                            });
-                        }
-                    });
-                    
-                    firebaseService.onSnapshot('tables', (data) => {
-                        if (Array.isArray(data)) {
-                            const hasTakeAway = data.some(t => t.id === 999);
-                            if (!hasTakeAway) {
-                                data.push({ id: 999, number: 'Take Away', seats: 0 });
-                            }
-                            this.setState({ 
-                                ...this.state,
-                                customTables: data 
-                            });
-                        }
-                    });
-                    
-                    firebaseService.onSnapshot('menuData', (data) => {
-                        this.setState({ 
-                            ...this.state,
-                            customMenuData: data 
-                        });
-                    });
-                    
-                } catch (error) {
-                    console.error('Errore setup Firebase listeners:', error);
-                    this.setState({ syncStatus: '❌ Errore connessione' });
-                }
+    this.setState({ syncStatus: '🔄 Connessione Firebase...' });
+    
+    try {
+        firebaseService.onSnapshot('orders', (data) => {
+            // ✅ MANTIENI currentView e altri stati UI
+            this.setState({ 
+                orders: data || {}, 
+                syncStatus: '🔥 Sincronizzato Firebase'
+            });
+        });
+        
+        firebaseService.onSnapshot('activeOrders', (data) => {
+            // ✅ SOLO activeOrders, non toccare il resto
+            this.setState({ 
+                activeOrders: Array.isArray(data) ? data : []
+            });
+        });
+        
+        firebaseService.onSnapshot('orderHistory', (data) => {
+            // ✅ SOLO orderHistory, non toccare il resto
+            if (Array.isArray(data) && data.length > 0) {
+                this.setState({ 
+                    orderHistory: data 
+                });
             }
+        });
+        
+        firebaseService.onSnapshot('tables', (data) => {
+            // ✅ SOLO tables, non toccare il resto
+            if (Array.isArray(data)) {
+                const hasTakeAway = data.some(t => t.id === 999);
+                if (!hasTakeAway) {
+                    data.push({ id: 999, number: 'Take Away', seats: 0 });
+                }
+                this.setState({ 
+                    customTables: data 
+                });
+            }
+        });
+        
+        firebaseService.onSnapshot('menuData', (data) => {
+            // ✅ SOLO menuData, non toccare il resto
+            this.setState({ 
+                customMenuData: data 
+            });
+        });
+        
+    } catch (error) {
+        console.error('Errore setup Firebase listeners:', error);
+        this.setState({ syncStatus: '❌ Errore connessione' });
+    }
+}
             
             setState(newState) {
     console.log('🔄 setState chiamato con:', newState);
