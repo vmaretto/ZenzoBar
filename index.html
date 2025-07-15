@@ -1294,14 +1294,17 @@ async saveFreeOrder() {
     selectedTable: 999,
     currentView: 'menu',
     expandedCategories: {},
-    activeTab: 'menu',
-    manualOrderDateTime: ''    // ← azzera il valore all’apertura
-  });
-                    // 🆕 dopo il render, metti a fuoco il datetime-local
-                    setTimeout(() => {
-                        const inp = document.getElementById('manualOrderDateTime');
-                        if (inp) inp.focus();
-                    }, 50);
+    activeTab: 'menu'
+});
+
+setTimeout(() => {
+    const dtInput = document.getElementById('manualOrderDateTime');
+    if (dtInput) {
+        const now = new Date();
+        dtInput.value = now.toISOString().slice(0, 16);
+        dtInput.focus();
+    }
+}, 50);
                     return;
                 }
 
