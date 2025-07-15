@@ -1778,13 +1778,16 @@ ${this.state.selectedTable === 999 ? `
             }
 
             renderHistoryView() {
-                const groupedByDate = this.state.orderHistory.reduce((acc, order) => {
-                    const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
-                    const dateKey = ts.toLocaleDateString('it-IT');
-                    if (!acc[dateKey]) acc[dateKey] = [];
-                    acc[dateKey].push(order);
-                    return acc;
-                }, {});
+                const groupedByDateTime = this.state.orderHistory.reduce((acc, order) => {
+    const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
+    
+    // Raggruppa per data esatta di apertura
+    const dateKey = ts.toLocaleDateString('it-IT');
+    
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(order);
+    return acc;
+}, {});
 
                 return `
                     <div class="p-6">
