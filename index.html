@@ -411,7 +411,8 @@
                     aiAnalysis: null,
                     activeTab: 'menu', 
                     discount: 0,
-                    showAIModal: false
+                    showAIModal: false,
+                    manualOrderDateTime: ''    // ← aggiunto qui
                 };
                 
                 this.init();
@@ -947,6 +948,7 @@ async saveFreeOrder() {
             await firebaseService.update('orders', clearedOrders);
 
             alert('✅ Take Away registrato nello storico!');
+            this.setState({ manualOrderDateTime: '' });
             this.setState({ currentView: 'tables' });
             return;
         }
@@ -963,6 +965,7 @@ async saveFreeOrder() {
 
         this.setState({ syncStatus: '🔥 Sincronizzato Firebase' });
         alert('✅ ORDINE INVIATO IN CUCINA!');
+        this.setState({ manualOrderDateTime: '' });
         this.setState({ currentView: 'tables' });
 
     } catch (error) {
@@ -1288,12 +1291,13 @@ async saveFreeOrder() {
             
             selectTable(tableId) {
                 if (tableId === 999) {
-                  this.setState({
-                        selectedTable: 999,
-                        currentView: 'menu',
-                        expandedCategories: {},
-                        activeTab: 'menu'
-                    });
+                    this.setState({
+    selectedTable: 999,
+    currentView: 'menu',
+    expandedCategories: {},
+    activeTab: 'menu',
+    manualOrderDateTime: ''    // ← azzera il valore all’apertura
+  });
                     // 🆕 dopo il render, metti a fuoco il datetime-local
                     setTimeout(() => {
                         const inp = document.getElementById('manualOrderDateTime');
@@ -1517,6 +1521,8 @@ ${this.state.selectedTable === 999 ? `
       type="datetime-local"
       id="manualOrderDateTime"
       class="border rounded p-2 text-sm"
+      value="${this.state.manualOrderDateTime}"                         <!-- legge dal state -->
+      onchange="app.setState({ manualOrderDateTime: this.value })"     <!-- aggiorna lo state -->
     />
   </div>
 ` : ''}
