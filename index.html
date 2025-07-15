@@ -411,8 +411,7 @@
                     aiAnalysis: null,
                     activeTab: 'menu', 
                     discount: 0,
-                    showAIModal: false,
-                    manualOrderDateTime: ''    // ← aggiunto qui
+                    showAIModal: false
                 };
                 
                 this.init();
@@ -1521,8 +1520,6 @@ ${this.state.selectedTable === 999 ? `
       type="datetime-local"
       id="manualOrderDateTime"
       class="border rounded p-2 text-sm"
-      value="${this.state.manualOrderDateTime || ''}"
-      oninput="app.state.manualOrderDateTime = this.value"   <!-- ⚠️ Modifica direttamente lo state -->
     />
   </div>
 ` : ''}
