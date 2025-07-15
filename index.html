@@ -1522,7 +1522,7 @@ ${this.state.selectedTable === 999 ? `
       id="manualOrderDateTime"
       class="border rounded p-2 text-sm"
       value="${this.state.manualOrderDateTime || ''}"
-      onchange="app.setState({ manualOrderDateTime: this.value })"
+      oninput="app.state.manualOrderDateTime = this.value"   <!-- ⚠️ Modifica direttamente lo state -->
     />
   </div>
 ` : ''}
