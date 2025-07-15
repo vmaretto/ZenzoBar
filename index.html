@@ -524,19 +524,29 @@
             }
             
             setState(newState) {
-                const scrollTarget = document.getElementById('menuScrollable');
-                const savedScrollTop = scrollTarget?.scrollTop || 0;
-                const oldExpandedCategories = this.state.expandedCategories;
-                this.state = { ...this.state, ...newState };
-                if (!newState.hasOwnProperty('expandedCategories')) {
-                    this.state.expandedCategories = oldExpandedCategories;
-                }
-                this.render();
-                requestAnimationFrame(() => {
-                    const newScrollTarget = document.getElementById('menuScrollable');
-                    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
-                });
-            }
+    console.log('🔄 setState chiamato con:', newState);
+    console.log('🔄 State precedente:', this.state.currentView);
+    
+    const scrollTarget = document.getElementById('menuScrollable');
+    const savedScrollTop = scrollTarget?.scrollTop || 0;
+    const oldExpandedCategories = this.state.expandedCategories;
+    this.state = { ...this.state, ...newState };
+    if (!newState.hasOwnProperty('expandedCategories')) {
+        this.state.expandedCategories = oldExpandedCategories;
+    }
+    
+    console.log('🔄 Nuovo state:', this.state.currentView);
+    console.log('🔄 Chiamando render...');
+    
+    this.render();
+    
+    requestAnimationFrame(() => {
+        const newScrollTarget = document.getElementById('menuScrollable');
+        if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
+    });
+    
+    console.log('✅ setState completato');
+}
             
             render() {
                 console.log('🎨 Rendering vista:', this.state.currentView);
@@ -1362,13 +1372,27 @@
                                 <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ⚙️ Configura
                                 </button>
-                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    🕐 Storico
-                                    ${this.state.orderHistory.length > 0 ? 
-                                        `<span class="bg-yellow-400 text-blue-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
-                                        : ''
-                                    }
-                                </button>
+                                // SOSTITUISCILA con questa versione DEBUG:
+<button onclick="
+    console.log('🔥 CLICK STORICO!'); 
+    console.log('🔍 App object exists:', typeof app !== 'undefined'); 
+    console.log('🔍 App object:', app);
+    console.log('🔍 setState method exists:', app && typeof app.setState === 'function');
+    console.log('🔍 Current state before:', app ? app.state : 'APP NOT FOUND');
+    try {
+        if (app && app.setState) {
+            app.setState({currentView: 'history'});
+            console.log('✅ setState chiamato con successo');
+            console.log('🔍 State dopo setState:', app.state);
+        } else {
+            console.error('❌ App o setState non disponibili');
+        }
+    } catch(e) {
+        console.error('❌ ERRORE durante setState:', e);
+    }
+" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+    🕐 Storico DEBUG
+</button>
                             </div>
                         </div>
                         
@@ -1885,7 +1909,16 @@
         setTimeout(() => {
             try {
                 console.log('🚀 Creazione ZenzoBarApp completa...');
-                window.app = new ZenzoBarApp();
+               try {
+    console.log('🚀 INIZIO creazione ZenzoBarApp...');
+    window.app = new ZenzoBarApp();
+    console.log('✅ App creata con successo:', window.app);
+    console.log('✅ setState disponibile:', typeof window.app.setState);
+    console.log('✅ State iniziale:', window.app.state);
+} catch(error) {
+    console.error('❌ ERRORE creazione app:', error);
+    console.error('❌ Stack trace:', error.stack);
+}
                 console.log('✅ App completa inizializzata con successo!');
             } catch (error) {
                 console.error('❌ Errore creazione app completa:', error);
