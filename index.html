@@ -424,12 +424,12 @@
                 this.render();
                 
                 setInterval(() => {
-                    const online = firebaseService.getConnectionState();
-                    this.setState({ isOnline: online });
-                    if (!online) {
-                        this.setState({ syncStatus: '🔴 Offline' });
-                    }
-                }, 5000);
+    const online = firebaseService.getConnectionState();
+
+    if (this.state.isOnline !== online) {
+        this.setState(Object.assign({}, this.state, { isOnline: online }));
+    }
+}, 5000);
             }
 
             hideAllModals() {
@@ -449,35 +449,46 @@
                 
                 try {
                     firebaseService.onSnapshot('orders', (data) => {
-                        this.setState({ 
-                            orders: data || {}, 
-                            syncStatus: '🔥 Sincronizzato Firebase'
-                        });
-                    });
+    this.setState({ 
+        ...this.state,
+        orders: data || {}, 
+        syncStatus: '🔥 Sincronizzato Firebase'
+    });
+});
 
                     firebaseService.onSnapshot('activeOrders', (data) => {
-                        this.setState({ 
-                            activeOrders: Array.isArray(data) ? data : []
-                        });
-                    });
+    this.setState({ 
+        ...this.state,
+        activeOrders: Array.isArray(data) ? data : []
+    });
+});
 
                     firebaseService.onSnapshot('orderHistory', (data) => {
-                        this.setState({ orderHistory: Array.isArray(data) ? data : [] });
-                    });
+    this.setState({ 
+        ...this.state,
+        orderHistory: Array.isArray(data) ? data : [] 
+    });
+});
 
                     firebaseService.onSnapshot('tables', (data) => {
-                        if (Array.isArray(data)) {
-                            const hasTakeAway = data.some(t => t.id === 999);
-                            if (!hasTakeAway) {
-                                data.push({ id: 999, number: 'Take Away', seats: 0 });
-                            }
-                            this.setState({ customTables: data });
-                        }
-                    });
+    if (Array.isArray(data)) {
+        const hasTakeAway = data.some(t => t.id === 999);
+        if (!hasTakeAway) {
+            data.push({ id: 999, number: 'Take Away', seats: 0 });
+        }
+        this.setState({ 
+            ...this.state,
+            customTables: data 
+        });
+    }
+});
 
                     firebaseService.onSnapshot('menuData', (data) => {
-                        this.setState({ customMenuData: data });
-                    });
+    this.setState({ 
+        ...this.state,
+        customMenuData: data 
+    });
+});
                     
                 } catch (error) {
                     console.error('Errore setup Firebase listeners:', error);
