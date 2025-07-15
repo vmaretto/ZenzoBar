@@ -746,13 +746,16 @@
             
             openEditDateModal(orderId) {
                 console.log('🔍 Apertura modal modifica per ID:', orderId);
+                console.log('📊 Ordini disponibili nello storico:', this.state.orderHistory.length);
+                console.log('🗂️ IDs nello storico:', this.state.orderHistory.map(o => o.id));
                 
                 // ✅ TROVA ORDINE DIRETTAMENTE 
                 const order = this.state.orderHistory.find(o => o.id === orderId);
                 
                 if (!order) {
                     console.error('❌ Ordine non trovato per ID:', orderId);
-                    alert('❌ Errore: ordine non trovato');
+                    console.error('📋 Lista completa ordini:', this.state.orderHistory);
+                    alert(`❌ Errore: ordine con ID ${orderId} non trovato nello storico.\n\nCi potrebbero essere ${this.state.orderHistory.length} ordini disponibili.\nProva a ricaricare la pagina.`);
                     return;
                 }
                 
@@ -1185,7 +1188,6 @@
                 const ordersToClose = this.state.activeOrders.filter(order => order.tableNumber == orderToClose.tableNumber);
                 const closedOrders = ordersToClose.map(o => ({
                     ...o,
-                    id: o.id.startsWith('order_') ? o.id : `order_${Date.now()}_${o.tableNumber}_${Math.floor(Math.random() * 1000)}`, // ✅ ASSICURA ID CONSISTENTE
                     state: 'paid',
                     closedAt: Date.now(),
                     closedBy: 'kitchen'
@@ -1211,7 +1213,6 @@
                 if (!conferma) return;
                 const closedOrders = ordersToClose.map(o => ({
                     ...o,
-                    id: o.id.startsWith('order_') ? o.id : `order_${Date.now()}_${o.tableNumber}_${Math.floor(Math.random() * 1000)}`, // ✅ ASSICURA ID CONSISTENTE
                     state: 'paid',
                     closedAt: Date.now(),
                     closedBy: 'waiter'
