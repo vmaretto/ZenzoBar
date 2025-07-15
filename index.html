@@ -405,8 +405,8 @@
                     manualOrderDateTime: ''
                 };
                 
-                // ✅ Flag per pausa listener durante cambio vista
-                this.pauseListeners = false;
+                // ✅ Flag per prevenire interferenze durante cambio vista
+                this.isViewChanging = false;
                 
                 this.init();
             }
@@ -471,33 +471,31 @@
                 });
             }
             
-            // ✅ FIREBASE LISTENERS SEMPLIFICATI
+            // ✅ FIREBASE LISTENERS CORRETTI - NON SOVRASCRIVONO LO STATO UI
             setupFirebaseListeners() {
                 this.setState({ syncStatus: '🔄 Connessione Firebase...' });
                 
                 try {
+                    // ✅ LISTENER SINGOLI SENZA THROTTLING ECCESSIVO
                     firebaseService.onSnapshot('orders', (data) => {
-                        if (!this.pauseListeners) {
-                            this.updateStateField('orders', data || {});
-                            this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
-                        }
+                        // Solo aggiorna orders, NON toccare currentView o altri stati UI
+                        this.updateStateField('orders', data || {});
+                        this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
                     });
                     
                     firebaseService.onSnapshot('activeOrders', (data) => {
-                        if (!this.pauseListeners) {
-                            this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
-                        }
+                        this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
                     });
                     
                     firebaseService.onSnapshot('orderHistory', (data) => {
-                        if (!this.pauseListeners && Array.isArray(data) && data.length > 0) {
+                        if (Array.isArray(data) && data.length > 0) {
                             console.log(`📊 Firebase orderHistory caricato: ${data.length} ordini`);
                             this.updateStateField('orderHistory', data);
                         }
                     });
                     
                     firebaseService.onSnapshot('tables', (data) => {
-                        if (!this.pauseListeners && Array.isArray(data)) {
+                        if (Array.isArray(data)) {
                             const hasTakeAway = data.some(t => t.id === 999);
                             if (!hasTakeAway) {
                                 data.push({ id: 999, number: 'Take Away', seats: 0 });
@@ -507,9 +505,7 @@
                     });
                     
                     firebaseService.onSnapshot('menuData', (data) => {
-                        if (!this.pauseListeners) {
-                            this.updateStateField('customMenuData', data);
-                        }
+                        this.updateStateField('customMenuData', data);
                     });
                     
                 } catch (error) {
@@ -518,21 +514,18 @@
                 }
             }
             
-            // ✅ METODO HELPER SEMPLIFICATO
+            // ✅ METODO HELPER PER AGGIORNARE SINGOLI CAMPI SENZA INTERFERENZE
             updateStateField(field, value) {
-                // Skip se i listener sono in pausa
-                if (this.pauseListeners) return;
-                
-                // Aggiorna solo se diverso
+                // Aggiorna solo il campo specifico senza chiamare render se non necessario
                 if (JSON.stringify(this.state[field]) === JSON.stringify(value)) {
-                    return;
+                    return; // Nessun cambiamento, skip
                 }
                 
                 console.log(`🔄 updateStateField: ${field}`, value?.length ? `(${value.length} items)` : value);
                 this.state[field] = value;
                 
-                // Solo render se campo è visibile nella vista corrente
-                if (this.isFieldVisible(field)) {
+                // ✅ Solo se stiamo aggiornando dati visibili nella vista corrente, fare re-render
+                if (this.isFieldVisible(field) && !this.isViewChanging) {
                     this.render();
                 }
             }
@@ -554,20 +547,39 @@
             
             setState(newState) {
                 console.log('🔄 setState chiamato con:', newState);
+                console.log('🔄 State precedente:', this.state.currentView);
                 
-                // ✅ APPROCCIO SEMPLIFICATO - STOP AI CONFLITTI
-                const oldState = { ...this.state };
-                this.state = { ...this.state, ...newState };
-                
-                // ✅ Se stiamo cambiando vista, forzare render immediato
-                if (newState.currentView && newState.currentView !== oldState.currentView) {
-                    console.log('📍 CAMBIO VISTA FORZATO:', oldState.currentView, '→', newState.currentView);
-                    // Pausa i listener temporaneamente
-                    this.pauseListeners = true;
-                    setTimeout(() => { this.pauseListeners = false; }, 1000);
+                // ✅ PROTEZIONE CONTRO INTERFERENZE DURANTE CAMBIO VISTA
+                if (newState.currentView && newState.currentView !== this.state.currentView) {
+                    console.log('📍 Cambio vista rilevato:', this.state.currentView, '→', newState.currentView);
+                    this.isViewChanging = true;
                 }
                 
+                const scrollTarget = document.getElementById('menuScrollable');
+                const savedScrollTop = scrollTarget?.scrollTop || 0;
+                const oldExpandedCategories = this.state.expandedCategories;
+                
+                this.state = { ...this.state, ...newState };
+                if (!newState.hasOwnProperty('expandedCategories')) {
+                    this.state.expandedCategories = oldExpandedCategories;
+                }
+                
+                console.log('🔄 Nuovo state:', this.state.currentView);
+                console.log('🔄 Chiamando render...');
+                
                 this.render();
+                
+                // ✅ RESET FLAG CAMBIO VISTA DOPO RENDER
+                setTimeout(() => {
+                    this.isViewChanging = false;
+                    console.log('✅ Cambio vista completato');
+                }, 200);
+                
+                requestAnimationFrame(() => {
+                    const newScrollTarget = document.getElementById('menuScrollable');
+                    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
+                });
+                
                 console.log('✅ setState completato');
             }
             
@@ -736,20 +748,13 @@
             }
             
             openEditDateModal(orderId) {
-                console.log('📝 Apertura modal modifica data per ordine:', orderId, typeof orderId);
-                
                 this.state.editingOrderId = orderId;
-                const order = this.state.orderHistory.find(o => String(o.id) === String(orderId));
+                const order = this.state.orderHistory.find(o => o.id === orderId);
                 
                 if (order) {
-                    console.log('✅ Ordine trovato:', order.id, new Date(order.timestamp).toLocaleString());
                     const dt = new Date(order.timestamp);
                     const iso = dt.toISOString().slice(0, 16);
                     document.getElementById('editDateInput').value = iso;
-                } else {
-                    console.error('❌ Ordine non trovato con ID:', orderId);
-                    alert('❌ Errore: ordine non trovato');
-                    return;
                 }
                 
                 const modal = document.getElementById('editDateModal');
@@ -772,90 +777,16 @@
                 }
                 
                 const newTs = new Date(dtVal).getTime();
-                const targetId = this.state.editingOrderId;
+                const updated = this.state.orderHistory.map(o =>
+                    o.id === this.state.editingOrderId
+                        ? { ...o, timestamp: newTs, closedAt: newTs }
+                        : o
+                );
                 
-                console.log('🔄 INIZIO modifica data ordine:', targetId);
-                console.log('📊 Ordini PRIMA della modifica:', this.state.orderHistory.length);
-                
-                // ✅ TROVA L'ORDINE SPECIFICO PRIMA DI FARE QUALSIASI COSA
-                const targetOrderIndex = this.state.orderHistory.findIndex(o => String(o.id) === String(targetId));
-                if (targetOrderIndex === -1) {
-                    alert('❌ Errore: ordine non trovato');
-                    console.error('❌ Ordine non trovato con ID:', targetId);
-                    return;
-                }
-                
-                const originalOrder = this.state.orderHistory[targetOrderIndex];
-                console.log('✅ Ordine da modificare trovato all\'indice:', targetOrderIndex);
-                console.log('📅 Data ORIGINALE:', new Date(originalOrder.timestamp).toLocaleString());
-                console.log('📅 Data NUOVA:', new Date(newTs).toLocaleString());
-                
-                // ✅ CREA COPIA COMPLETA DELL'ARRAY SENZA MODIFICARE L'ORIGINALE
-                const updatedHistory = [...this.state.orderHistory];
-                
-                // ✅ MODIFICA SOLO L'ORDINE SPECIFICO
-                updatedHistory[targetOrderIndex] = {
-                    ...originalOrder,
-                    timestamp: newTs,
-                    closedAt: newTs
-                };
-                
-                console.log('📊 Ordini DOPO la modifica:', updatedHistory.length);
-                console.log('✅ Verifico che sia cambiato solo 1 ordine...');
-                
-                // ✅ VERIFICA DI SICUREZZA - CONTA I CAMBIAMENTI
-                let modificati = 0;
-                let nonModificati = 0;
-                
-                for (let i = 0; i < this.state.orderHistory.length; i++) {
-                    const vecchio = this.state.orderHistory[i];
-                    const nuovo = updatedHistory[i];
-                    
-                    if (vecchio.timestamp !== nuovo.timestamp) {
-                        modificati++;
-                        console.log(`🔄 MODIFICATO ordine ${nuovo.id}: ${new Date(vecchio.timestamp).toLocaleString()} → ${new Date(nuovo.timestamp).toLocaleString()}`);
-                    } else {
-                        nonModificati++;
-                    }
-                }
-                
-                console.log(`📈 VERIFICA: ${modificati} modificati, ${nonModificati} non modificati`);
-                
-                // ✅ BLOCCA SE PIÙ DI 1 ORDINE È STATO MODIFICATO
-                if (modificati !== 1) {
-                    console.error(`❌ ERRORE GRAVE: modificati ${modificati} ordini invece di 1!`);
-                    alert(`❌ ERRORE: modificati ${modificati} ordini invece di 1. Operazione ANNULLATA per sicurezza.`);
-                    return;
-                }
-                
-                console.log('✅ Verifica superata - procedo con l\'aggiornamento');
-                
-                // ✅ PAUSA I LISTENER PER EVITARE INTERFERENZE
-                this.pauseListeners = true;
-                
-                // ✅ AGGIORNA LO STATO
-                this.setState({ orderHistory: updatedHistory });
-                
-                // ✅ AGGIORNA FIREBASE
-                try {
-                    await firebaseService.update('orderHistory', updatedHistory);
-                    console.log('✅ Firebase aggiornato con successo');
-                } catch (error) {
-                    console.error('❌ Errore aggiornamento Firebase:', error);
-                    alert('❌ Errore salvataggio su Firebase');
-                    return;
-                }
-                
-                // ✅ RIATTIVA I LISTENER DOPO UN SECONDO
-                setTimeout(() => {
-                    this.pauseListeners = false;
-                    console.log('✅ Listener riattivati');
-                }, 1000);
-                
+                this.setState({ orderHistory: updated });
+                await firebaseService.update('orderHistory', updated);
                 this.cancelEditDateModal();
-                alert('✅ Data/ora aggiornata SOLO per questo ordine!');
-                
-                console.log('🎉 Operazione completata con successo');
+                alert('✅ Data/ora aggiornata!');
             }
             
             async saveFreeOrder() {
@@ -1428,46 +1359,6 @@
                 }
             }
             
-            // ✅ METODO DIRETTO PER APRIRE STORICO
-            openHistoryDirect() {
-                console.log('🎯 APERTURA STORICO DIRETTA');
-                
-                // Pausa tutti i listener
-                this.pauseListeners = true;
-                
-                // Forza cambio vista
-                this.state.currentView = 'history';
-                
-                // Render immediato
-                this.render();
-                
-                // Riprendi listener dopo 2 secondi
-                setTimeout(() => {
-                    this.pauseListeners = false;
-                    console.log('✅ Listener riattivati');
-                }, 2000);
-            }
-            
-            // ✅ METODO DIRETTO PER TORNARE AI TAVOLI
-            backToTablesDirect() {
-                console.log('🎯 RITORNO AI TAVOLI DIRETTO');
-                
-                // Pausa listener
-                this.pauseListeners = true;
-                
-                // Forza cambio vista
-                this.state.currentView = 'tables';
-                
-                // Render immediato
-                this.render();
-                
-                // Riprendi listener dopo 1 secondo
-                setTimeout(() => {
-                    this.pauseListeners = false;
-                    console.log('✅ Listener riattivati');
-                }, 1000);
-            }
-            
             openBreakfastMenu() {
                 this.state.tempSelectedTable = 998;
                 this.setState({ 
@@ -1510,7 +1401,7 @@
                                 <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ⚙️ Configura
                                 </button>
-                                <button onclick="app.openHistoryDirect()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                     🕐 Storico
                                     ${this.state.orderHistory.length > 0 ? 
                                         `<span class="bg-yellow-400 text-blue-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
@@ -1899,162 +1790,7 @@
             }
             
             renderHistoryView() {
-                console.log('🎯 RENDERING HISTORY VIEW - Ordini:', this.state.orderHistory.length);
-                
-                // ✅ RAGGRUPPAMENTO SICURO PER DATE
-                const groupedByDateTime = {};
-                
-                this.state.orderHistory.forEach((order, index) => {
-                    try {
-                        // ✅ GESTIONE SICURA DEL TIMESTAMP
-                        let ts;
-                        if (order.timestamp?.seconds) {
-                            ts = new Date(order.timestamp.seconds * 1000);
-                        } else if (order.timestamp) {
-                            ts = new Date(order.timestamp);
-                        } else {
-                            console.warn(`⚠️ Ordine ${order.id} senza timestamp valido`, order);
-                            ts = new Date(); // Fallback a oggi
-                        }
-                        
-                        const dateKey = ts.toLocaleDateString('it-IT');
-                        
-                        if (!groupedByDateTime[dateKey]) {
-                            groupedByDateTime[dateKey] = [];
-                        }
-                        
-                        // ✅ AGGIUNGI ORDINE ALLA DATA CORRETTA
-                        groupedByDateTime[dateKey].push({
-                            ...order,
-                            _originalIndex: index,
-                            _parsedDate: ts
-                        });
-                        
-                    } catch (error) {
-                        console.error(`❌ Errore processando ordine ${order.id}:`, error, order);
-                    }
-                });
-                
-                console.log('📊 Raggruppamento completato:', Object.keys(groupedByDateTime).length, 'date');
-                Object.entries(groupedByDateTime).forEach(([date, orders]) => {
-                    console.log(`📅 ${date}: ${orders.length} ordini`);
-                });
-                
-                return `
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h1 class="text-2xl font-bold text-gray-800">📊 Storico Ordini Chiusi (${this.state.orderHistory.length})</h1>
-                            <div class="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4">
-                                <button onclick="app.exportOrderHistoryCSV()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                                    📤 Esporta CSV
-                                </button>
-                                <button onclick="app.selectTable(999)" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-                                    ➕ Ordine Manuale
-                                </button>
-                                <button onclick="app.backToTablesDirect()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                                    ✕ Chiudi
-                                </button>
-                            </div>
-                        </div>
-                        
-                        ${this.state.orderHistory.length === 0 ? `
-                            <div class="text-center text-gray-500 mt-12">
-                                <div class="text-6xl mb-4">🕐</div>
-                                <p class="text-xl">Nessun ordine chiuso ancora</p>
-                                <p class="text-sm text-gray-400 mt-2">Gli ordini pagati appariranno qui</p>
-                                <button onclick="app.selectTable(999)" class="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    ➕ Crea il primo ordine
-                                </button>
-                            </div>
-                        ` : `
-                            <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                                    <div>
-                                        <div class="text-2xl font-bold text-blue-600">${this.state.orderHistory.length}</div>
-                                        <div class="text-sm text-blue-600">Ordini Totali</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-2xl font-bold text-green-600">€${this.state.orderHistory.reduce((sum, o) => sum + o.total, 0).toFixed(2)}</div>
-                                        <div class="text-sm text-green-600">Fatturato Totale</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-2xl font-bold text-purple-600">€${(this.state.orderHistory.reduce((sum, o) => sum + o.total, 0) / this.state.orderHistory.length).toFixed(2)}</div>
-                                        <div class="text-sm text-purple-600">Scontrino Medio</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-8">
-                                ${Object.entries(groupedByDateTime).map(([date, orders]) => `
-                                    <div>
-                                        <h2 class="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
-                                            📅 ${date} 
-                                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">${orders.length} ordini</span>
-                                            <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">€${orders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}</span>
-                                        </h2>
-                                        <div class="space-y-4">
-                                            ${orders.map(order => `
-                                                <div class="bg-white rounded-lg shadow-sm p-4 border hover:shadow-md transition-shadow">
-                                                    <div class="flex justify-between items-start mb-3">
-                                                        <div>
-                                                            <h3 class="font-bold text-lg flex items-center gap-2">
-                                                                ${order.tableNumber === 999 ? '🥡' : '🍽️'} 
-                                                                ${order.tableNumber === 999 ? 'Take Away' : `Tavolo ${order.tableNumber}`}
-                                                            </h3>
-                                                            <div class="flex gap-4 mt-1">
-                                                                <button onclick="app.deleteOrderFromHistory('${order.id}')" class="text-sm text-red-600 hover:underline">🗑️ Elimina</button>
-                                                                <button onclick="app.openEditDateModal('${String(order.id).replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
-                                                                    ✏️ Modifica Data/Ora
-                                                                </button>
-                                                            </div>
-                                                            <p class="text-gray-600 text-sm mt-2">
-                                                                📅 Ordinato: ${
-                                                                    order.timestamp
-                                                                      ? new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp).toLocaleString('it-IT')
-                                                                      : '—'
-                                                                  }
-                                                            </p>
-                                                            <p class="text-gray-600 text-sm">
-                                                                💰 Chiuso: ${
-                                                                    order.closedAt
-                                                                      ? new Date(order.closedAt?.seconds ? order.closedAt.seconds * 1000 : order.closedAt).toLocaleString('it-IT')
-                                                                      : '—'
-                                                                  }
-                                                            </p>
-                                                            <p class="text-blue-600 text-sm font-medium mt-1">
-                                                                ${order.closedBy === 'kitchen' ? '👨‍🍳 Incassato da Cucina' : '👤 Incassato da Cameriere'}
-                                                            </p>
-                                                        </div>
-                                                        <div class="text-right">
-                                                            <div class="text-2xl font-bold text-green-600">€${order.total.toFixed(2)}</div>
-                                                            <div class="text-sm text-gray-500">${order.items.reduce((sum, item) => sum + item.quantity, 0)} articoli</div>
-                                                            <div class="text-xs text-green-600 font-medium mt-1 bg-green-50 px-2 py-1 rounded">✅ PAGATO</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="border-t pt-3">
-                                                        <h4 class="font-medium text-gray-700 mb-2">📋 Dettaglio Ordine:</h4>
-                                                        ${order.items.map(item => `
-                                                            <div class="flex justify-between text-sm mb-1 py-1 px-2 bg-gray-50 rounded">
-                                                                <span class="flex items-center gap-2">
-                                                                    <span class="font-medium">${item.quantity}x</span>
-                                                                    <span>${item.name}</span>
-                                                                    ${item.note ? `<span class="text-blue-600 text-xs">📝 ${item.note}</span>` : ''}
-                                                                    ${item.isFreeOrder ? '<span class="text-purple-600 text-xs">🆓</span>' : ''}
-                                                                </span>
-                                                                <span class="font-medium">€${(item.price * item.quantity).toFixed(2)}</span>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `}
-                    </div>
-                `;
-            }
+                const groupedByDateTime = this.state.orderHistory.reduce((acc, order) => {
                     const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
                     
                     // Raggruppa per data esatta di apertura
@@ -2076,7 +1812,7 @@
                                 <button onclick="app.selectTable(999)" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
                                     ➕ Ordine Manuale
                                 </button>
-                                <button onclick="app.backToTablesDirect()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                <button onclick="app.setState({currentView: 'tables'})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
                                     ✕ Chiudi
                                 </button>
                             </div>
@@ -2128,7 +1864,7 @@
                                                             </h3>
                                                             <div class="flex gap-4 mt-1">
                                                                 <button onclick="app.deleteOrderFromHistory('${order.id}')" class="text-sm text-red-600 hover:underline">🗑️ Elimina</button>
-                                                                <button onclick="app.openEditDateModal('${String(order.id).replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
+                                                                <button onclick="app.openEditDateModal('${order.id.replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
                                                                     ✏️ Modifica Data/Ora
                                                                 </button>
                                                             </div>
@@ -2193,48 +1929,6 @@
                 console.log('✅ setState disponibile:', typeof window.app.setState);
                 console.log('✅ State iniziale:', window.app.state);
                 console.log('✅ App completa inizializzata con successo!');
-                
-                        // ✅ DEBUG HELPER - puoi usare nella console del browser
-                        window.forceHistoryView = () => {
-                            console.log('🚨 FORCE HISTORY VIEW');
-                            window.app.state.currentView = 'history';
-                            window.app.render();
-                        };
-                        
-                        window.forceTablesView = () => {
-                            console.log('🚨 FORCE TABLES VIEW');
-                            window.app.state.currentView = 'tables';
-                            window.app.render();
-                        };
-                        
-                        // ✅ DEBUG MODIFICA DATE - verifica cosa succede
-                        window.debugOrderDates = () => {
-                            console.log('🔍 DEBUG ORDINI E DATE:');
-                            window.app.state.orderHistory.forEach((order, index) => {
-                                const date = new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp);
-                                console.log(`${index}: ID=${order.id}, Data=${date.toLocaleDateString('it-IT')}, Timestamp=${order.timestamp}`);
-                            });
-                        };
-                        
-                        // ✅ VERIFICA INTEGRITÀ DOPO MODIFICA
-                        window.verifyOrderIntegrity = () => {
-                            const orders = window.app.state.orderHistory;
-                            console.log('🔍 VERIFICA INTEGRITÀ:');
-                            console.log(`Totale ordini: ${orders.length}`);
-                            
-                            const groupByDate = {};
-                            orders.forEach(order => {
-                                const date = new Date(order.timestamp?.seconds ? order.timestamp.seconds * 1000 : order.timestamp).toLocaleDateString('it-IT');
-                                if (!groupByDate[date]) groupByDate[date] = [];
-                                groupByDate[date].push(order.id);
-                            });
-                            
-                            Object.entries(groupByDate).forEach(([date, orderIds]) => {
-                                console.log(`📅 ${date}: ${orderIds.length} ordini - IDs: ${orderIds.join(', ')}`);
-                            });
-                            
-                            return groupByDate;
-                        };
             } catch (error) {
                 console.error('❌ ERRORE creazione app:', error);
                 console.error('❌ Stack trace:', error.stack);
