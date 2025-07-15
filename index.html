@@ -1826,7 +1826,7 @@ ${this.state.selectedTable === 999 ? `
                                                         <div>
                                                             <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
                                                             <button onclick="app.deleteOrderFromHistory(${order.id})" class="text-sm text-red-600 hover:underline ml-2">🗑️ Elimina</button>
-                                                            <button onclick="app.openEditDateModal(${JSON.stringify(order.id)})" class="text-sm text-blue-600 hover:underline ml-2">
+                                                            <button onclick="app.openEditDateModal('${order.id.replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline ml-2">
   ✏️ Modifica Data/Ora
 </button>
                                                             <p class="text-gray-600 text-sm">
