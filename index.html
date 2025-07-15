@@ -736,13 +736,18 @@
             }
             
             openEditDateModal(orderId) {
-                this.state.editingOrderId = orderId;
-                const order = this.state.orderHistory.find(o => o.id === orderId);
+                // Assicurati che l'ID sia una stringa per confronti consistenti
+                this.state.editingOrderId = String(orderId);
+                const order = this.state.orderHistory.find(o => String(o.id) === String(orderId));
                 
                 if (order) {
                     const dt = new Date(order.timestamp);
                     const iso = dt.toISOString().slice(0, 16);
                     document.getElementById('editDateInput').value = iso;
+                } else {
+                    console.error('❌ Ordine non trovato per ID:', orderId);
+                    alert('❌ Errore: ordine non trovato');
+                    return;
                 }
                 
                 const modal = document.getElementById('editDateModal');
@@ -765,11 +770,17 @@
                 }
                 
                 const newTs = new Date(dtVal).getTime();
-                const updated = this.state.orderHistory.map(o =>
-                    o.id === this.state.editingOrderId
+                console.log('🔍 Editing order ID:', this.state.editingOrderId);
+                console.log('🔍 New timestamp:', newTs, new Date(newTs));
+                
+                const updated = this.state.orderHistory.map(o => {
+                    const match = String(o.id) === String(this.state.editingOrderId);
+                    console.log('🔍 Comparing:', String(o.id), '===', String(this.state.editingOrderId), '→', match);
+                    
+                    return match
                         ? { ...o, timestamp: newTs, closedAt: newTs }
-                        : o
-                );
+                        : o;
+                });
                 
                 this.setState({ orderHistory: updated });
                 await firebaseService.update('orderHistory', updated);
@@ -1894,7 +1905,7 @@
                                                             </h3>
                                                             <div class="flex gap-4 mt-1">
                                                                 <button onclick="app.deleteOrderFromHistory('${order.id}')" class="text-sm text-red-600 hover:underline">🗑️ Elimina</button>
-                                                                <button onclick="app.openEditDateModal('${String(order.id).replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
+                                                                <button onclick="app.openEditDateModal('${order.id}')" class="text-sm text-blue-600 hover:underline">
                                                                     ✏️ Modifica Data/Ora
                                                                 </button>
                                                             </div>
