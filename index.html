@@ -405,8 +405,8 @@
                     manualOrderDateTime: ''
                 };
                 
-                // ✅ Flag per prevenire interferenze durante cambio vista
-                this.isViewChanging = false;
+                // ✅ Flag per pausa listener durante cambio vista
+                this.pauseListeners = false;
                 
                 this.init();
             }
@@ -471,31 +471,33 @@
                 });
             }
             
-            // ✅ FIREBASE LISTENERS CORRETTI - NON SOVRASCRIVONO LO STATO UI
+            // ✅ FIREBASE LISTENERS SEMPLIFICATI
             setupFirebaseListeners() {
                 this.setState({ syncStatus: '🔄 Connessione Firebase...' });
                 
                 try {
-                    // ✅ LISTENER SINGOLI SENZA THROTTLING ECCESSIVO
                     firebaseService.onSnapshot('orders', (data) => {
-                        // Solo aggiorna orders, NON toccare currentView o altri stati UI
-                        this.updateStateField('orders', data || {});
-                        this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
+                        if (!this.pauseListeners) {
+                            this.updateStateField('orders', data || {});
+                            this.updateStateField('syncStatus', '🔥 Sincronizzato Firebase');
+                        }
                     });
                     
                     firebaseService.onSnapshot('activeOrders', (data) => {
-                        this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
+                        if (!this.pauseListeners) {
+                            this.updateStateField('activeOrders', Array.isArray(data) ? data : []);
+                        }
                     });
                     
                     firebaseService.onSnapshot('orderHistory', (data) => {
-                        if (Array.isArray(data) && data.length > 0) {
+                        if (!this.pauseListeners && Array.isArray(data) && data.length > 0) {
                             console.log(`📊 Firebase orderHistory caricato: ${data.length} ordini`);
                             this.updateStateField('orderHistory', data);
                         }
                     });
                     
                     firebaseService.onSnapshot('tables', (data) => {
-                        if (Array.isArray(data)) {
+                        if (!this.pauseListeners && Array.isArray(data)) {
                             const hasTakeAway = data.some(t => t.id === 999);
                             if (!hasTakeAway) {
                                 data.push({ id: 999, number: 'Take Away', seats: 0 });
@@ -505,7 +507,9 @@
                     });
                     
                     firebaseService.onSnapshot('menuData', (data) => {
-                        this.updateStateField('customMenuData', data);
+                        if (!this.pauseListeners) {
+                            this.updateStateField('customMenuData', data);
+                        }
                     });
                     
                 } catch (error) {
@@ -514,18 +518,21 @@
                 }
             }
             
-            // ✅ METODO HELPER PER AGGIORNARE SINGOLI CAMPI SENZA INTERFERENZE
+            // ✅ METODO HELPER SEMPLIFICATO
             updateStateField(field, value) {
-                // Aggiorna solo il campo specifico senza chiamare render se non necessario
+                // Skip se i listener sono in pausa
+                if (this.pauseListeners) return;
+                
+                // Aggiorna solo se diverso
                 if (JSON.stringify(this.state[field]) === JSON.stringify(value)) {
-                    return; // Nessun cambiamento, skip
+                    return;
                 }
                 
                 console.log(`🔄 updateStateField: ${field}`, value?.length ? `(${value.length} items)` : value);
                 this.state[field] = value;
                 
-                // ✅ Solo se stiamo aggiornando dati visibili nella vista corrente, fare re-render
-                if (this.isFieldVisible(field) && !this.isViewChanging) {
+                // Solo render se campo è visibile nella vista corrente
+                if (this.isFieldVisible(field)) {
                     this.render();
                 }
             }
@@ -547,39 +554,20 @@
             
             setState(newState) {
                 console.log('🔄 setState chiamato con:', newState);
-                console.log('🔄 State precedente:', this.state.currentView);
                 
-                // ✅ PROTEZIONE CONTRO INTERFERENZE DURANTE CAMBIO VISTA
-                if (newState.currentView && newState.currentView !== this.state.currentView) {
-                    console.log('📍 Cambio vista rilevato:', this.state.currentView, '→', newState.currentView);
-                    this.isViewChanging = true;
-                }
-                
-                const scrollTarget = document.getElementById('menuScrollable');
-                const savedScrollTop = scrollTarget?.scrollTop || 0;
-                const oldExpandedCategories = this.state.expandedCategories;
-                
+                // ✅ APPROCCIO SEMPLIFICATO - STOP AI CONFLITTI
+                const oldState = { ...this.state };
                 this.state = { ...this.state, ...newState };
-                if (!newState.hasOwnProperty('expandedCategories')) {
-                    this.state.expandedCategories = oldExpandedCategories;
-                }
                 
-                console.log('🔄 Nuovo state:', this.state.currentView);
-                console.log('🔄 Chiamando render...');
+                // ✅ Se stiamo cambiando vista, forzare render immediato
+                if (newState.currentView && newState.currentView !== oldState.currentView) {
+                    console.log('📍 CAMBIO VISTA FORZATO:', oldState.currentView, '→', newState.currentView);
+                    // Pausa i listener temporaneamente
+                    this.pauseListeners = true;
+                    setTimeout(() => { this.pauseListeners = false; }, 1000);
+                }
                 
                 this.render();
-                
-                // ✅ RESET FLAG CAMBIO VISTA DOPO RENDER
-                setTimeout(() => {
-                    this.isViewChanging = false;
-                    console.log('✅ Cambio vista completato');
-                }, 200);
-                
-                requestAnimationFrame(() => {
-                    const newScrollTarget = document.getElementById('menuScrollable');
-                    if (newScrollTarget) newScrollTarget.scrollTop = savedScrollTop;
-                });
-                
                 console.log('✅ setState completato');
             }
             
@@ -1359,6 +1347,46 @@
                 }
             }
             
+            // ✅ METODO DIRETTO PER APRIRE STORICO
+            openHistoryDirect() {
+                console.log('🎯 APERTURA STORICO DIRETTA');
+                
+                // Pausa tutti i listener
+                this.pauseListeners = true;
+                
+                // Forza cambio vista
+                this.state.currentView = 'history';
+                
+                // Render immediato
+                this.render();
+                
+                // Riprendi listener dopo 2 secondi
+                setTimeout(() => {
+                    this.pauseListeners = false;
+                    console.log('✅ Listener riattivati');
+                }, 2000);
+            }
+            
+            // ✅ METODO DIRETTO PER TORNARE AI TAVOLI
+            backToTablesDirect() {
+                console.log('🎯 RITORNO AI TAVOLI DIRETTO');
+                
+                // Pausa listener
+                this.pauseListeners = true;
+                
+                // Forza cambio vista
+                this.state.currentView = 'tables';
+                
+                // Render immediato
+                this.render();
+                
+                // Riprendi listener dopo 1 secondo
+                setTimeout(() => {
+                    this.pauseListeners = false;
+                    console.log('✅ Listener riattivati');
+                }, 1000);
+            }
+            
             openBreakfastMenu() {
                 this.state.tempSelectedTable = 998;
                 this.setState({ 
@@ -1401,7 +1429,7 @@
                                 <button onclick="app.setState({showSettings: !app.state.showSettings})" class="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                     ⚙️ Configura
                                 </button>
-                                <button onclick="app.setState({currentView: 'history'})" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <button onclick="app.openHistoryDirect()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                     🕐 Storico
                                     ${this.state.orderHistory.length > 0 ? 
                                         `<span class="bg-yellow-400 text-blue-800 rounded-full px-2 py-1 text-xs font-bold">${this.state.orderHistory.length}</span>` 
@@ -1790,6 +1818,8 @@
             }
             
             renderHistoryView() {
+                console.log('🎯 RENDERING HISTORY VIEW - Ordini:', this.state.orderHistory.length);
+                
                 const groupedByDateTime = this.state.orderHistory.reduce((acc, order) => {
                     const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date(order.timestamp);
                     
@@ -1812,7 +1842,7 @@
                                 <button onclick="app.selectTable(999)" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
                                     ➕ Ordine Manuale
                                 </button>
-                                <button onclick="app.setState({currentView: 'tables'})" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                <button onclick="app.backToTablesDirect()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
                                     ✕ Chiudi
                                 </button>
                             </div>
@@ -1864,7 +1894,7 @@
                                                             </h3>
                                                             <div class="flex gap-4 mt-1">
                                                                 <button onclick="app.deleteOrderFromHistory('${order.id}')" class="text-sm text-red-600 hover:underline">🗑️ Elimina</button>
-                                                                <button onclick="app.openEditDateModal('${order.id.replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
+                                                                <button onclick="app.openEditDateModal('${String(order.id).replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:underline">
                                                                     ✏️ Modifica Data/Ora
                                                                 </button>
                                                             </div>
@@ -1929,6 +1959,19 @@
                 console.log('✅ setState disponibile:', typeof window.app.setState);
                 console.log('✅ State iniziale:', window.app.state);
                 console.log('✅ App completa inizializzata con successo!');
+                
+                        // ✅ DEBUG HELPER - puoi usare nella console del browser
+                        window.forceHistoryView = () => {
+                            console.log('🚨 FORCE HISTORY VIEW');
+                            window.app.state.currentView = 'history';
+                            window.app.render();
+                        };
+                        
+                        window.forceTablesView = () => {
+                            console.log('🚨 FORCE TABLES VIEW');
+                            window.app.state.currentView = 'tables';
+                            window.app.render();
+                        };
             } catch (error) {
                 console.error('❌ ERRORE creazione app:', error);
                 console.error('❌ Stack trace:', error.stack);
