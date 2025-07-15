@@ -1521,8 +1521,8 @@ ${this.state.selectedTable === 999 ? `
       type="datetime-local"
       id="manualOrderDateTime"
       class="border rounded p-2 text-sm"
-      value="${this.state.manualOrderDateTime}"                         <!-- legge dal state -->
-      onchange="app.setState({ manualOrderDateTime: this.value })"     <!-- aggiorna lo state -->
+      value="${this.state.manualOrderDateTime || ''}"
+      onchange="app.setState({ manualOrderDateTime: this.value })"
     />
   </div>
 ` : ''}
