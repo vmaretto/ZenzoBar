@@ -666,6 +666,43 @@ const ts = currentOrder[0]?.customTimestamp || Date.now();
                 document.getElementById('freeOrderModal').style.display = 'none';
             }
 
+// Stato temporaneo per l'ordine in modifica
+openEditDateModal(orderId) {
+    this.state.editingOrderId = orderId;
+    // prepopola il datetime-local con la data attuale
+    const ord = this.state.orderHistory.find(o => o.id === orderId);
+    const dt = new Date(ord.timestamp);
+    const iso = dt.toISOString().slice(0,16);
+    const input = document.getElementById('editDateInput');
+    input.value = iso;
+    // mostra il modal
+    const modal = document.getElementById('editDateModal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    input.focus();  // 🆕 autofocus
+}
+
+cancelEditDateModal() {
+    document.getElementById('editDateModal').classList.add('hidden');
+    this.state.editingOrderId = null;
+}
+
+async saveEditedDate() {
+    const dtVal = document.getElementById('editDateInput').value;
+    if (!dtVal) return alert('❌ Seleziona una data valida');
+    const newTs = new Date(dtVal).getTime();
+
+    const updated = this.state.orderHistory.map(o =>
+        o.id === this.state.editingOrderId
+          ? { ...o, timestamp: newTs, closedAt: newTs }
+          : o
+    );
+
+    this.setState({ orderHistory: updated });
+    await firebaseService.update('orderHistory', updated);
+    this.cancelEditDateModal();
+}
+            
             // METODI PER ORDINE LIBERO
 async saveFreeOrder() {
     const name     = document.getElementById('freeItemName').value.trim();
@@ -1251,12 +1288,17 @@ async saveFreeOrder() {
             
             selectTable(tableId) {
                 if (tableId === 999) {
-                    this.setState({
+                  this.setState({
                         selectedTable: 999,
                         currentView: 'menu',
                         expandedCategories: {},
                         activeTab: 'menu'
                     });
+                    // 🆕 dopo il render, metti a fuoco il datetime-local
+                    setTimeout(() => {
+                        const inp = document.getElementById('manualOrderDateTime');
+                        if (inp) inp.focus();
+                    }, 50);
                     return;
                 }
 
@@ -1773,6 +1815,12 @@ ${this.state.selectedTable === 999 ? `
                                                         <div>
                                                             <h3 class="font-bold text-lg">Tavolo ${order.tableNumber}</h3>
                                                             <button onclick="app.deleteOrderFromHistory(${order.id})" class="text-sm text-red-600 hover:underline ml-2">🗑️ Elimina</button>
+                                                            <button
+  onclick="app.openEditDateModal(${order.id})"
+  class="text-sm text-blue-600 hover:underline ml-2"
+>
+  ✏️ Modifica Data/Ora
+</button>
                                                             <p class="text-gray-600 text-sm">
                                                                 Ordinato: ${
                                                                     order.timestamp
