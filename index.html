@@ -1948,6 +1948,22 @@
                     return acc;
                 }, {});
                 
+                // ✅ ORDINA LE DATE (più recente prima) E GLI ORDINI ALL'INTERNO DI OGNI GIORNO
+                Object.keys(groupedByDateTime).forEach(dateKey => {
+                    groupedByDateTime[dateKey].sort((a, b) => {
+                        const timestampA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : a.timestamp;
+                        const timestampB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : b.timestamp;
+                        return timestampB - timestampA; // Più recente prima
+                    });
+                });
+                
+                const sortedDateEntries = Object.entries(groupedByDateTime).sort((a, b) => {
+                    // Confronta le date: più recente prima
+                    const dateA = new Date(a[0].split('/').reverse().join('-')); // Converte da "dd/mm/yyyy" a Date
+                    const dateB = new Date(b[0].split('/').reverse().join('-'));
+                    return dateB - dateA;
+                });
+                
                 return `
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-6">
@@ -1993,7 +2009,7 @@
                             </div>
                             
                             <div class="space-y-8">
-                                ${Object.entries(groupedByDateTime).map(([date, orders]) => `
+                                ${sortedDateEntries.map(([date, orders]) => `
                                     <div>
                                         <h2 class="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                                             📅 ${date} 
