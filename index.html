@@ -1227,6 +1227,10 @@ async saveFreeOrder() {
                 this.setState({ discount: percent });
                 alert(`🎁 Sconto del ${percent}% applicato`);
             }
+
+updateManualOrderDateTime(value) {
+    this.setState({ manualOrderDateTime: value });
+}
             
             confirmGuestCount() {
                 const input = document.getElementById('guestCountInput');
@@ -1290,23 +1294,19 @@ async saveFreeOrder() {
             
             selectTable(tableId) {
                 if (tableId === 999) {
-                    this.setState({
-    selectedTable: 999,
-    currentView: 'menu',
-    expandedCategories: {},
-    activeTab: 'menu'
-});
+    const now = new Date();
+    const isoNow = now.toISOString().slice(0, 16);
 
-setTimeout(() => {
-    const dtInput = document.getElementById('manualOrderDateTime');
-    if (dtInput) {
-        const now = new Date();
-        dtInput.value = now.toISOString().slice(0, 16);
-        dtInput.focus();
-    }
-}, 50);
-                    return;
-                }
+    this.setState({
+        selectedTable: 999,
+        currentView: 'menu',
+        expandedCategories: {},
+        activeTab: 'menu',
+        manualOrderDateTime: isoNow   // 🆕 Salva nello stato!
+    });
+
+    return;
+}
 
                 const activeOrder = this.state.activeOrders.find(order => order.tableNumber === tableId);
 
@@ -1523,6 +1523,8 @@ ${this.state.selectedTable === 999 ? `
       type="datetime-local"
       id="manualOrderDateTime"
       class="border rounded p-2 text-sm"
+      value="${this.state.manualOrderDateTime || ''}"
+      oninput="app.updateManualOrderDateTime(this.value)"
     />
   </div>
 ` : ''}
